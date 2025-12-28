@@ -9,6 +9,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-top: 30px;
     margin-bottom: 20px;
 }
 .category-header::after {
@@ -23,7 +24,14 @@
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--ph-orange); }
 
+/* Markdown 样式 */
+.markdown-body { font-size: 1rem; line-height: 1.6; }
+.markdown-body h1, .markdown-body h2 { color: var(--ph-orange); font-weight: 800; margin-top: 1em; }
+.markdown-body ul { list-style: disc; padding-left: 1.5em; margin: 1em 0; }
+.markdown-body code { background: #333; padding: 0.2em 0.4em; border-radius: 4px; font-family: monospace; }
+.markdown-body pre { background: #000; padding: 1em; border-radius: 8px; border: 1px solid #333; overflow-x: auto; margin: 1em 0; }
+
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-@keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-.animate-scale-in { animation: scaleIn 0.25s ease-out forwards; }
+@keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
 .heart-beat { animation: heartbeat 1.5s ease-in-out infinite; }
