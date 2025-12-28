@@ -1,8 +1,6 @@
 let prompts = [];
 let config = JSON.parse(localStorage.getItem('gist_config')) || { token: '', gistId: '' };
 let currentModalIndex = -1;
-
-// 拖拽相关状态
 let draggedItemIndex = null;
 let touchTimer = null;
 
@@ -10,9 +8,7 @@ const elements = {
     listContainer: document.getElementById('list-container'),
     searchBar: document.getElementById('search-bar'),
     modalBackdrop: document.getElementById('modal-backdrop'),
-    modalContentHtml: document.getElementById('modal-content-html'),
-    statusBar: document.getElementById('status-bar'),
-    statusText: document.getElementById('status-text')
+    statusBar: document.getElementById('status-bar')
 };
 
 window.onload = () => {
@@ -21,7 +17,7 @@ window.onload = () => {
 };
 
 // ===========================
-// 渲染逻辑 (含分类修改按钮)
+// 核心渲染逻辑 (包含分类编辑按钮)
 // ===========================
 function render(filter = "") {
     elements.listContainer.innerHTML = '';
@@ -29,21 +25,21 @@ function render(filter = "") {
         p.title.toLowerCase().includes(filter) || p.content.toLowerCase().includes(filter)
     );
 
-    const categories = [...new Set(prompts.map(p => p.category || "未分类"))];
+    const cats = [...new Set(prompts.map(p => p.category || "未分类"))];
     let hasVisible = false;
 
-    categories.forEach(cat => {
+    cats.forEach(cat => {
         const catItems = filtered.filter(p => (p.category || "未分类") === cat);
         if (catItems.length === 0) return;
         hasVisible = true;
 
         const section = document.createElement('div');
-        section.className = "mb-8 animate-scale-in";
+        section.className = "mb-10 animate-scale-in";
         section.innerHTML = `
-            <div class="category-header group">
+            <div class="category-header">
                 <span class="text-[#ff9900] font-black tracking-widest text-sm uppercase">${cat}</span>
-                <button onclick="renameCategory('${cat}')" class="edit-cat-btn text-zinc-600 hover:text-white text-xs">✎ 修改名称</button>
-                <span class="text-zinc-700 text-xs font-bold ml-auto">${catItems.length} ITEMS</span>
+                <button onclick="renameCategory('${cat}')" class="btn-edit-cat">修改名称</button>
+                <span class="text-zinc-700 text-[10px] font-bold ml-auto">${catItems.length} ITEMS</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 list-grid" data-category="${cat}"></div>
         `;
@@ -55,20 +51,18 @@ function render(filter = "") {
             card.className = 'title-card bg-[#1b1b1b] p-6 rounded-2xl border border-zinc-800 hover:border-[#ff9900] shadow-lg flex justify-between items-center';
             card.dataset.index = realIdx;
 
-            // PC 端拖拽
             if (filter === "") {
                 card.draggable = true;
                 bindDragEvents(card, realIdx);
-                // 移动端长按
                 bindTouchEvents(card, realIdx);
             }
 
             card.innerHTML = `
                 <div class="flex-grow cursor-pointer overflow-hidden" onclick="openViewModal(${realIdx})">
                     <h3 class="font-bold text-white group-hover:text-[#ff9900] text-lg truncate pr-4">${p.title}</h3>
-                    <p class="text-zinc-600 text-[10px] mt-1 uppercase font-black">Hold to move / Click to view</p>
+                    <p class="text-zinc-600 text-[10px] mt-1 uppercase font-black">长按移动 / 点击查看</p>
                 </div>
-                <div class="text-zinc-800"><svg width="16" height="16" fill="currentColor"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/></svg></div>
+                <div class="text-zinc-800"><svg width="18" height="18" fill="currentColor"><circle cx="5" cy="4" r="1.5"/><circle cx="13" cy="4" r="1.5"/><circle cx="5" cy="9" r="1.5"/><circle cx="13" cy="9" r="1.5"/><circle cx="5" cy="14" r="1.5"/><circle cx="13" cy="14" r="1.5"/></svg></div>
             `;
             grid.appendChild(card);
         });
@@ -78,11 +72,11 @@ function render(filter = "") {
 }
 
 // ===========================
-// 分类重命名逻辑
+// 分类修改功能
 // ===========================
 function renameCategory(oldName) {
-    const newName = prompt(`将分类 "${oldName}" 重命名为:`, oldName);
-    if (newName && newName.trim() !== "" && newName !== oldName) {
+    const newName = prompt(`将分类 [${oldName}] 修改为:`, oldName);
+    if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
         prompts.forEach(p => {
             if ((p.category || "未分类") === oldName) p.category = newName.trim();
         });
@@ -91,7 +85,7 @@ function renameCategory(oldName) {
 }
 
 // ===========================
-// 增强型插入排序逻辑 (含跨分类提示)
+// 优化后的插入移动逻辑
 // ===========================
 function bindDragEvents(el, index) {
     el.ondragstart = (e) => {
@@ -100,44 +94,53 @@ function bindDragEvents(el, index) {
     };
     el.ondragend = () => {
         el.classList.remove('dragging');
-        document.querySelectorAll('.title-card').forEach(c => c.classList.remove('drop-target-above', 'drop-target-below'));
+        clearDropIndicators();
     };
     el.ondragover = (e) => {
         e.preventDefault();
         const rect = el.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-        el.classList.remove('drop-target-above', 'drop-target-below');
-        el.classList.add(e.clientY < midpoint ? 'drop-target-above' : 'drop-target-below');
+        const isAbove = e.clientY < rect.top + rect.height / 2;
+        clearDropIndicators();
+        el.classList.add(isAbove ? 'drop-target-above' : 'drop-target-below');
     };
     el.ondrop = (e) => {
         e.preventDefault();
         const rect = el.getBoundingClientRect();
         const isAbove = e.clientY < rect.top + rect.height / 2;
-        executeMove(draggedItemIndex, index, isAbove);
+        handleMove(draggedItemIndex, index, isAbove);
     };
 }
 
-// 移动端模拟长按拖拽 (极简实现)
 function bindTouchEvents(el, index) {
-    el.ontouchstart = (e) => {
+    el.ontouchstart = () => {
         touchTimer = setTimeout(() => {
             draggedItemIndex = index;
             el.classList.add('dragging');
-            // 简单提示进入拖拽模式
-            if(window.navigator.vibrate) window.navigator.vibrate(50);
+            if (navigator.vibrate) navigator.vibrate(40);
         }, 600);
     };
-    el.ontouchend = () => clearTimeout(touchTimer);
-    // 注意：移动端完整自由拖拽通常需要 SortableJS 库，此处实现长按后的逻辑触发
+    el.ontouchend = () => {
+        clearTimeout(touchTimer);
+        if (el.classList.contains('dragging')) {
+            el.classList.remove('dragging');
+            // 移动端简单移动：仅支持长按后点击另一个来交换（或在此处扩展 TouchMove 逻辑）
+        }
+    };
 }
 
-async function executeMove(fromIdx, toIdx, isAbove) {
-    if (fromIdx === null || fromIdx === toIdx) return;
+function clearDropIndicators() {
+    document.querySelectorAll('.title-card').forEach(c => {
+        c.classList.remove('drop-target-above', 'drop-target-below');
+    });
+}
+
+async function handleMove(fromIdx, toIdx, isAbove) {
+    if (fromIdx === toIdx) return;
 
     const source = prompts[fromIdx];
     const target = prompts[toIdx];
-    const targetCat = target.category || "未分类";
     const sourceCat = source.category || "未分类";
+    const targetCat = target.category || "未分类";
 
     // 跨分类逻辑
     if (sourceCat !== targetCat) {
@@ -145,7 +148,7 @@ async function executeMove(fromIdx, toIdx, isAbove) {
         source.category = targetCat;
     }
 
-    // 计算插入位置
+    // 执行移动：删除原项 -> 插入新项
     prompts.splice(fromIdx, 1);
     const newToIdx = prompts.indexOf(target);
     const finalIdx = isAbove ? newToIdx : newToIdx + 1;
@@ -158,7 +161,7 @@ async function executeMove(fromIdx, toIdx, isAbove) {
 }
 
 // ===========================
-// 基础 CRUD 与 同步 (同上个版本)
+// 常规 CRUD 与同步
 // ===========================
 function openViewModal(index) {
     currentModalIndex = index;
@@ -185,6 +188,15 @@ function showModal(show) {
 
 function closeModal() { showModal(false); }
 
+function openCreateModal() {
+    currentModalIndex = -1;
+    document.getElementById('p-title').value = "";
+    document.getElementById('p-content').value = "";
+    document.getElementById('p-category').value = "";
+    showModalMode('edit');
+    showModal(true);
+}
+
 function switchToEditMode() {
     const p = prompts[currentModalIndex];
     document.getElementById('p-title').value = p.title;
@@ -199,9 +211,8 @@ async function handleSave() {
     const category = document.getElementById('p-category').value.trim() || "未分类";
     if (!title || !content) return;
 
-    const data = { title, content, category };
-    if (currentModalIndex === -1) prompts.push(data);
-    else prompts[currentModalIndex] = data;
+    if (currentModalIndex === -1) prompts.push({ title, content, category });
+    else prompts[currentModalIndex] = { title, content, category };
     
     render(); closeModal(); await pushData();
 }
@@ -215,16 +226,12 @@ function deleteFromModal() {
 
 function copyFromModal(btn) {
     navigator.clipboard.writeText(prompts[currentModalIndex].content);
-    const origin = btn.innerText; btn.innerText = "已复制！";
-    btn.classList.add('bg-green-600');
-    setTimeout(() => { btn.innerText = origin; btn.classList.remove('bg-green-600'); }, 1200);
+    btn.innerText = "已复制 ✅";
+    setTimeout(() => btn.innerText = "复制正文", 1500);
 }
 
 function handleSearch() { render(elements.searchBar.value.toLowerCase()); }
 
-// ===========================
-// 云同步
-// ===========================
 async function saveConfig() {
     config = { 
         token: document.getElementById('gh-token').value.trim(), 
@@ -237,23 +244,23 @@ async function saveConfig() {
 
 async function fetchData() {
     if (!config.token || !config.gistId) return;
-    updateStatus('同步中...', true);
+    updateStatus('正在拉取云端数据...', true);
     try {
         const res = await fetch(`https://api.github.com/gists/${config.gistId}`, { 
             headers: { 'Authorization': `token ${config.token}` } 
         });
         const data = await res.json();
         prompts = JSON.parse(data.files['prompts.json'].content);
-        render(); updateStatus('同步完成');
-    } catch (e) { updateStatus('获取失败'); }
+        render(); 
+        updateStatus('同步成功');
+    } catch (e) { updateStatus('获取失败，请检查配置'); }
 }
 
 async function pushData() {
     if (!config.token) return;
-    updateStatus('云端同步中...', true);
-    const url = config.gistId ? `https://api.github.com/gists/${config.gistId}` : `https://api.github.com/gists`;
+    updateStatus('同步云端...', true);
     try {
-        const res = await fetch(url, {
+        const res = await fetch(config.gistId ? `https://api.github.com/gists/${config.gistId}` : `https://api.github.com/gists`, {
             method: config.gistId ? 'PATCH' : 'POST',
             headers: { 'Authorization': `token ${config.token}` },
             body: JSON.stringify({ 
@@ -266,19 +273,13 @@ async function pushData() {
             localStorage.setItem('gist_config', JSON.stringify(config)); 
         }
         updateStatus('云端已更新');
-    } catch (e) { updateStatus('更新失败'); }
+    } catch (e) { updateStatus('上传失败'); }
 }
 
 function updateStatus(msg, show = false) {
-    elements.statusBar.classList.toggle('hidden', !show && msg==='');
-    elements.statusText.innerText = msg;
+    elements.statusBar.classList.remove('hidden');
+    elements.statusBar.innerText = msg;
     if (!show) setTimeout(() => elements.statusBar.classList.add('hidden'), 2000);
 }
 
-function exportBackup() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(prompts));
-    const dl = document.createElement('a');
-    dl.setAttribute("href", dataStr);
-    dl.setAttribute("download", "prompts_backup.json");
-    dl.click();
-}
+function resetConfig() { if(confirm('重置配置？')) { localStorage.clear(); location.reload(); } }

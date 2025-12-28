@@ -1,41 +1,42 @@
 :root { --ph-orange: #ff9900; --ph-black: #000000; --ph-dark: #1b1b1b; }
 
-.title-card { cursor: grab; user-select: none; transition: transform 0.2s, opacity 0.2s; touch-action: none; }
-.title-card:active { cursor: grabbing; }
+/* 拖拽反馈样式 */
+.title-card { cursor: grab; user-select: none; transition: transform 0.2s, opacity 0.2s; touch-action: none; position: relative; }
+.title-card.dragging { opacity: 0.2; transform: scale(0.98); border: 2px dashed var(--ph-orange) !important; }
 
-/* 拖拽状态 */
-.dragging { opacity: 0.2; transform: scale(0.95); border: 2px dashed var(--ph-orange) !important; }
+/* 插入位置指示器 */
 .drop-target-above { border-top: 4px solid var(--ph-orange) !important; }
 .drop-target-below { border-bottom: 4px solid var(--ph-orange) !important; }
 
-/* 分类标题 */
+/* 分类标题与编辑按钮 */
 .category-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-top: 30px;
-    margin-bottom: 20px;
+    gap: 12px;
+    margin-top: 32px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #222;
+    padding-bottom: 8px;
 }
-.category-header::after {
-    content: "";
-    flex-grow: 1;
-    height: 1px;
-    background: linear-gradient(to right, #333, transparent);
+.btn-edit-cat {
+    font-size: 12px;
+    color: #666;
+    background: #111;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
 }
-
-.edit-cat-btn { opacity: 0.3; transition: opacity 0.2s; cursor: pointer; }
-.category-header:hover .edit-cat-btn { opacity: 1; }
+.btn-edit-cat:hover { color: var(--ph-orange); background: #222; }
 
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: var(--ph-black); }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--ph-orange); }
 
-/* Markdown 样式 */
-.markdown-body { font-size: 1rem; line-height: 1.6; }
-.markdown-body h1, .markdown-body h2 { color: var(--ph-orange); font-weight: 800; margin-top: 1em; }
-.markdown-body code { background: #333; padding: 0.2em 0.4em; border-radius: 4px; font-family: monospace; }
-.markdown-body pre { background: #000; padding: 1em; border-radius: 8px; border: 1px solid #333; overflow-x: auto; margin: 1em 0; }
+/* Markdown 内容样式 */
+.markdown-body { font-size: 0.95rem; line-height: 1.6; color: #d1d1d1; }
+.markdown-body pre { background: #000; padding: 12px; border-radius: 8px; border: 1px solid #333; overflow-x: auto; margin: 12px 0; }
+.markdown-body code { background: #333; padding: 2px 4px; border-radius: 4px; font-family: monospace; color: #ff9900; }
 
-@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 .animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
