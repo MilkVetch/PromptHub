@@ -33,6 +33,10 @@
 .custom-scrollbar::-webkit-scrollbar-track { background: var(--ph-black); }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
+/* 版权及动画 */
+@keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+.heart-beat { display: inline-block; animation: heartbeat 1.5s ease-in-out infinite; color: #ff9900; }
+
 .markdown-body { font-size: 0.95rem; line-height: 1.7; color: #ccc; }
 .markdown-body pre { background: #080808; padding: 16px; border-radius: 12px; border: 1px solid #222; overflow-x: auto; }
 .markdown-body code { color: var(--ph-orange); background: #222; padding: 2px 5px; border-radius: 4px; }

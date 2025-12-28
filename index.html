@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prompt Hub</title>
+    <title>Prompt Hub | for SUNO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -11,28 +11,32 @@
 <body class="bg-black text-white min-h-screen flex flex-col font-sans">
 
     <div class="container mx-auto px-4 py-8 max-w-5xl flex-grow">
-        <header class="flex justify-between items-center mb-10 p-6 rounded-3xl bg-[#111] border border-zinc-900 shadow-2xl">
-            <div class="flex items-center cursor-pointer select-none" onclick="location.reload()">
-                <span class="text-2xl font-black tracking-tighter">Prompt</span>
-                <span class="text-2xl font-black text-black bg-[#ff9900] px-2 ml-1 rounded-md tracking-tighter">Hub</span>
+        <header class="flex justify-between items-center mb-10 p-6 rounded-3xl bg-[#111] border border-zinc-900 shadow-2xl relative">
+            <div class="flex flex-col cursor-pointer select-none" onclick="location.reload()">
+                <div class="flex items-center">
+                    <span class="text-2xl font-black tracking-tighter">Prompt</span>
+                    <span class="text-2xl font-black text-black bg-[#ff9900] px-2 ml-1 rounded-md tracking-tighter">Hub</span>
+                </div>
+                <span class="text-[10px] font-bold text-zinc-600 tracking-[0.2em] ml-0.5 uppercase">for SUNO</span>
             </div>
-            <button onclick="toggleConfig()" class="text-zinc-500 hover:text-[#ff9900] font-bold transition-colors">⚙️ 同步设置</button>
+            <button id="config-toggle-btn" onclick="toggleConfig(event)" class="text-sm font-bold text-zinc-500 hover:text-[#ff9900] transition-colors">⚙️ 同步设置</button>
         </header>
 
-        <section id="config-section" class="hidden mb-8 p-8 bg-[#111] border border-zinc-800 rounded-3xl animate-scale-in">
+        <section id="config-section" class="hidden mb-8 p-8 bg-[#111] border border-zinc-800 rounded-3xl animate-scale-in relative z-50">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
                     <label class="text-xs font-black text-zinc-500 uppercase ml-1">GitHub Token</label>
-                    <input type="password" id="gh-token" placeholder="未设置" class="w-full p-4 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] text-sm">
+                    <input type="password" id="gh-token" class="w-full p-4 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] text-sm">
                 </div>
                 <div class="space-y-2">
                     <label class="text-xs font-black text-zinc-500 uppercase ml-1">Gist ID</label>
-                    <input type="text" id="gist-id" placeholder="未关联" class="w-full p-4 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] text-sm">
+                    <input type="text" id="gist-id" class="w-full p-4 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] text-sm">
                 </div>
             </div>
-            <div class="flex gap-4 mt-8">
+            <div class="flex flex-wrap gap-4 mt-8">
                 <button onclick="saveConfig()" class="flex-grow bg-[#ff9900] text-black py-4 rounded-2xl font-black hover:scale-[1.01] transition-transform">保存配置</button>
-                <button onclick="resetConfig()" class="px-8 py-4 bg-zinc-900 text-zinc-500 rounded-2xl font-bold border border-zinc-800">注销同步</button>
+                <button onclick="exportConfig()" class="px-8 py-4 bg-zinc-800 text-zinc-300 rounded-2xl font-bold border border-zinc-800 hover:bg-zinc-700">导出配置</button>
+                <button onclick="resetConfig()" class="px-8 py-4 bg-zinc-950 text-red-900 rounded-2xl font-bold border border-red-950/20">注销</button>
             </div>
         </section>
 
@@ -45,16 +49,23 @@
                     <span class="absolute left-6 top-5 opacity-20 text-xl">🔍</span>
                 </div>
                 <button onclick="openCreateModal()" class="bg-[#ff9900] hover:bg-orange-500 text-black font-black text-lg px-10 py-5 rounded-3xl shadow-xl active:scale-95 transition-all">
-                    + NEW PROMPT
+                    + 新建 PROMPT
                 </button>
             </div>
-
             <div id="list-container"></div>
-            <div id="empty-state" class="hidden py-32 text-center text-zinc-800 text-xl font-black">NO RESULTS FOUND</div>
+            <div id="empty-state" class="hidden py-32 text-center text-zinc-800 text-xl font-black">未找到相关内容</div>
         </main>
+
+        <footer class="py-12 text-center border-t border-zinc-900 mt-12">
+            <div class="cursor-pointer select-none group inline-block" onclick="showContactModal()">
+                <p class="text-zinc-500 text-sm font-medium tracking-tight group-hover:text-zinc-300 transition-colors">
+                    © 2025 Khee. Crafted with <span class="heart-beat">♥</span> for AI music lovers.
+                </p>
+            </div>
+        </footer>
     </div>
 
-    <div id="modal-backdrop" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 hidden flex items-center justify-center p-4">
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] hidden flex items-center justify-center p-4">
         <div id="modal-container" class="bg-[#111] border border-zinc-800 w-full max-w-3xl rounded-[2rem] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             <div class="p-8 border-b border-zinc-900 flex justify-between items-center">
                 <div class="flex items-center gap-4 overflow-hidden">
@@ -70,12 +81,12 @@
                         <input type="text" id="p-category" list="category-suggestions" placeholder="分类..." class="p-5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900]">
                         <input type="text" id="p-title" placeholder="标题..." class="p-5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900]">
                     </div>
-                    <textarea id="p-content" rows="12" placeholder="Markdown 内容..." class="w-full p-6 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] font-mono"></textarea>
+                    <textarea id="p-content" rows="12" placeholder="内容..." class="w-full p-6 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] font-mono"></textarea>
                 </div>
             </div>
             <div id="modal-footer" class="p-8 bg-zinc-950/50 flex gap-4">
                 <div id="view-actions" class="hidden flex gap-4 w-full">
-                    <button onclick="copyFromModal(this)" class="flex-grow bg-[#ff9900] text-black py-5 rounded-2xl font-black text-xl">一键复制</button>
+                    <button onclick="copyFromModal(this)" class="flex-grow bg-[#ff9900] text-black py-5 rounded-2xl font-black text-xl">一键复制内容</button>
                     <button onclick="switchToEditMode()" class="px-8 py-5 bg-zinc-800 rounded-2xl font-bold">编辑</button>
                     <button onclick="deleteFromModal()" class="px-8 py-5 bg-zinc-900 text-red-600 rounded-2xl font-bold">删除</button>
                 </div>
