@@ -24,7 +24,7 @@
 ### 步骤 2：配置应用
 1. 打开 [Prompt Hub](https://milkvetch.github.io/PromptHub/)，点击右上角 **⚙️ 同步设置**。
 2. 粘贴 **GitHub Token**。
-3. **首次使用**：Gist ID 留空，保存并创建第一个项后，系统会自动为您生成 ID。
+3. **首次使用**：Gist ID 留空，保存并创建第一个prompt后，系统会自动为您生成 ID。
 4. **多端同步**：在其他设备上输入相同的 Token 和该 Gist ID 即可实现数据同步。
 
 ---
