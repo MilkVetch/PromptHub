@@ -1,0 +1,63 @@
+/* Tailwind 的自定义配置 (通过 CSS 变量实现) */
+:root {
+    --ph-orange: #ff9900;
+    --ph-black: #000000;
+    --ph-dark: #1b1b1b; /* 稍微浅一点的黑，用于卡片背景 */
+}
+
+/* 扩展 Tailwind 的颜色配置 */
+.bg-ph-orange { background-color: var(--ph-orange); }
+.text-ph-orange { color: var(--ph-orange); }
+.border-ph-orange { border-color: var(--ph-orange); }
+.ring-ph-orange { --tw-ring-color: var(--ph-orange); }
+.bg-ph-dark { background-color: var(--ph-dark); }
+.bg-ph-black { background-color: var(--ph-black); }
+
+body {
+    background-color: var(--ph-black);
+    color: #ffffff;
+}
+
+/* 自定义暗黑风格滚动条 */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #000000;
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--ph-orange);
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* 点击列表项的效果 */
+.title-card:active {
+    transform: scale(0.98);
+}
