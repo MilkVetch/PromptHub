@@ -1,10 +1,14 @@
 :root { --ph-orange: #ff9900; --ph-black: #000000; --ph-dark: #1b1b1b; }
 
-.title-card { cursor: grab; user-select: none; transition: all 0.2s ease; }
+.title-card { cursor: grab; user-select: none; transition: transform 0.2s, opacity 0.2s; touch-action: none; }
 .title-card:active { cursor: grabbing; }
-.dragging { opacity: 0.4; border: 2px dashed var(--ph-orange) !important; transform: scale(0.96); }
 
-/* 分类标题装饰 */
+/* 拖拽状态 */
+.dragging { opacity: 0.2; transform: scale(0.95); border: 2px dashed var(--ph-orange) !important; }
+.drop-target-above { border-top: 4px solid var(--ph-orange) !important; }
+.drop-target-below { border-bottom: 4px solid var(--ph-orange) !important; }
+
+/* 分类标题 */
 .category-header {
     display: flex;
     align-items: center;
@@ -19,6 +23,9 @@
     background: linear-gradient(to right, #333, transparent);
 }
 
+.edit-cat-btn { opacity: 0.3; transition: opacity 0.2s; cursor: pointer; }
+.category-header:hover .edit-cat-btn { opacity: 1; }
+
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: var(--ph-black); }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -27,11 +34,8 @@
 /* Markdown 样式 */
 .markdown-body { font-size: 1rem; line-height: 1.6; }
 .markdown-body h1, .markdown-body h2 { color: var(--ph-orange); font-weight: 800; margin-top: 1em; }
-.markdown-body ul { list-style: disc; padding-left: 1.5em; margin: 1em 0; }
 .markdown-body code { background: #333; padding: 0.2em 0.4em; border-radius: 4px; font-family: monospace; }
 .markdown-body pre { background: #000; padding: 1em; border-radius: 8px; border: 1px solid #333; overflow-x: auto; margin: 1em 0; }
 
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-@keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 .animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
-.heart-beat { animation: heartbeat 1.5s ease-in-out infinite; }

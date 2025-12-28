@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prompt Hub | Your Personal AI Assistant</title>
+    <title>Prompt Hub | Personal AI Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -16,21 +16,17 @@
                 <span class="text-2xl font-black tracking-tighter">Prompt</span>
                 <span class="text-2xl font-black text-black bg-[#ff9900] px-2 ml-1 rounded-md tracking-tighter">Hub</span>
             </div>
-            <button id="toggle-config-btn" onclick="document.getElementById('config-section').classList.toggle('hidden')" class="text-sm font-bold text-zinc-500 hover:text-[#ff9900] transition-colors">
-                ⚙️ 设置同步
-            </button>
+            <button onclick="document.getElementById('config-section').classList.toggle('hidden')" class="text-sm font-bold text-zinc-500 hover:text-[#ff9900]">⚙️ 设置同步</button>
         </header>
 
-        <section id="config-section" class="hidden mb-6 p-6 bg-[#1b1b1b] border border-zinc-800 rounded-2xl shadow-2xl animate-scale-in">
+        <section id="config-section" class="hidden mb-6 p-6 bg-[#1b1b1b] border border-zinc-800 rounded-2xl animate-scale-in">
             <h2 class="font-bold text-[#ff9900] text-lg mb-2">☁️ GitHub Gist 配置</h2>
-            <p class="text-xs text-zinc-500 mb-4 leading-relaxed">提示：请确保 Token 拥有 "gist" 权限。建议使用 Fine-grained Token 以保证安全。</p>
             <div class="space-y-4">
-                <input type="password" id="gh-token" placeholder="GitHub Token (ghp_...)" class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
-                <input type="text" id="gist-id" placeholder="Gist ID (若首次创建请留空)" class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
-                <div class="flex flex-wrap gap-3">
-                    <button onclick="saveConfig()" class="flex-grow bg-[#ff9900] text-black py-3 px-6 rounded-xl font-bold hover:bg-orange-500 transition-all">保存配置</button>
-                    <button onclick="exportBackup()" class="px-6 py-3 text-zinc-300 border border-zinc-700 rounded-xl hover:bg-zinc-800">导出 JSON</button>
-                    <button onclick="resetConfig()" class="px-6 py-3 text-red-500 border border-red-900/30 rounded-xl hover:bg-red-950/30">重置</button>
+                <input type="password" id="gh-token" placeholder="GitHub Token" class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
+                <input type="text" id="gist-id" placeholder="Gist ID" class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
+                <div class="flex gap-3">
+                    <button onclick="saveConfig()" class="flex-grow bg-[#ff9900] text-black py-3 rounded-xl font-bold">保存配置</button>
+                    <button onclick="exportBackup()" class="px-6 py-3 border border-zinc-700 rounded-xl">备份</button>
                 </div>
             </div>
         </section>
@@ -42,69 +38,54 @@
         <main>
             <div class="flex flex-col md:flex-row gap-4 mb-8">
                 <div class="relative flex-grow">
-                    <input type="text" id="search-bar" oninput="handleSearch()" placeholder="搜索标题或内容..." class="w-full p-4 bg-[#1b1b1b] border-2 border-zinc-800 rounded-2xl text-white outline-none focus:border-[#ff9900] pl-12">
+                    <input type="text" id="search-bar" oninput="handleSearch()" placeholder="搜索标题或内容..." class="w-full p-4 bg-[#1b1b1b] border-2 border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] pl-12">
                     <span class="absolute left-4 top-4 opacity-30 text-xl">🔍</span>
                 </div>
-                <button onclick="openCreateModal()" class="bg-[#ff9900] hover:bg-orange-500 text-black font-black text-lg px-8 py-4 rounded-2xl shadow-lg transition-all active:scale-95 whitespace-nowrap">
+                <button onclick="openCreateModal()" class="bg-[#ff9900] hover:bg-orange-500 text-black font-black text-lg px-8 py-4 rounded-2xl shadow-lg transition-all active:scale-95">
                     + 新建 PROMPT
                 </button>
             </div>
 
             <div id="list-container" class="space-y-4"></div>
-            
             <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-zinc-600">
                 <p class="text-lg font-bold">没有发现相关的 Prompt</p>
             </div>
         </main>
     </div>
 
-    <footer class="py-8 text-center text-zinc-600 text-sm font-bold select-none">
-        <span>© Khee</span>
-        <span class="text-[#ff9900] mx-1 inline-block heart-beat">❤️</span>
-    </footer>
+    <footer class="py-8 text-center text-zinc-600 text-sm font-bold">© Khee <span class="text-[#ff9900]">❤</span></footer>
 
     <div id="modal-backdrop" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-        <div id="modal-container" class="bg-[#1b1b1b] border border-zinc-800 w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-scale-in overflow-hidden">
+        <div id="modal-container" class="bg-[#1b1b1b] border border-zinc-800 w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             <div class="flex justify-between items-center p-6 border-b border-zinc-800 bg-zinc-900/50">
-                <div class="flex items-center space-x-3 truncate mr-4">
-                    <span id="modal-category-badge" class="px-2 py-0.5 rounded text-[10px] font-black bg-zinc-800 text-zinc-400 uppercase">分类</span>
-                    <h3 id="modal-title" class="text-xl font-black text-[#ff9900] truncate">详情</h3>
+                <div class="flex items-center space-x-3 truncate">
+                    <span id="modal-category-badge" class="px-2 py-0.5 rounded text-[10px] font-black bg-zinc-800 text-zinc-400 uppercase"></span>
+                    <h3 id="modal-title" class="text-xl font-black text-[#ff9900] truncate"></h3>
                 </div>
-                <button onclick="closeModal()" class="text-zinc-500 hover:text-white text-2xl font-bold px-2">✕</button>
+                <button onclick="closeModal()" class="text-zinc-500 hover:text-white text-2xl px-2">✕</button>
             </div>
 
-            <div class="p-6 overflow-y-auto custom-scrollbar flex-grow text-zinc-200">
-                <div id="view-mode-content" class="hidden markdown-body">
-                    <div id="modal-content-html"></div>
-                </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-grow">
+                <div id="view-mode-content" class="hidden markdown-body"><div id="modal-content-html"></div></div>
                 <div id="edit-mode-form" class="hidden space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-2">
-                            <label class="text-xs text-zinc-500 font-bold ml-1">分类 (支持新分类)</label>
-                            <input type="text" id="p-category" list="category-suggestions" placeholder="分类名称..." class="p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] font-bold">
-                            <datalist id="category-suggestions"></datalist>
-                        </div>
-                        <div class="flex flex-col gap-2">
-                            <label class="text-xs text-zinc-500 font-bold ml-1">标题</label>
-                            <input type="text" id="p-title" placeholder="Prompt 标题..." class="p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] font-bold">
-                        </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="text" id="p-category" list="category-suggestions" placeholder="分类..." class="p-4 bg-black border-2 border-zinc-800 rounded-xl outline-none focus:border-[#ff9900]">
+                        <datalist id="category-suggestions"></datalist>
+                        <input type="text" id="p-title" placeholder="标题..." class="p-4 bg-black border-2 border-zinc-800 rounded-xl outline-none focus:border-[#ff9900]">
                     </div>
-                    <div class="flex flex-col gap-2">
-                        <label class="text-xs text-zinc-500 font-bold ml-1">正文 (支持 Markdown)</label>
-                        <textarea id="p-content" rows="10" placeholder="在此粘贴内容..." class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] resize-none custom-scrollbar leading-relaxed font-mono"></textarea>
-                    </div>
+                    <textarea id="p-content" rows="10" placeholder="内容 (Markdown)..." class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl outline-none focus:border-[#ff9900] font-mono"></textarea>
                 </div>
             </div>
 
             <div id="modal-footer" class="p-6 border-t border-zinc-800 bg-zinc-900/80 flex space-x-3">
                 <div id="view-actions" class="hidden flex space-x-3 w-full">
-                    <button onclick="copyFromModal(this)" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg hover:bg-orange-500 transition-all">一键复制内容</button>
-                    <button onclick="switchToEditMode()" class="px-6 py-4 bg-zinc-800 text-white rounded-xl font-bold hover:bg-zinc-700">修改</button>
-                    <button onclick="deleteFromModal()" class="px-6 py-4 bg-zinc-900 text-red-600 rounded-xl font-bold hover:bg-red-950">删除</button>
+                    <button onclick="copyFromModal(this)" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg">一键复制内容</button>
+                    <button onclick="switchToEditMode()" class="px-6 py-4 bg-zinc-800 rounded-xl font-bold">修改</button>
+                    <button onclick="deleteFromModal()" class="px-6 py-4 bg-zinc-900 text-red-600 rounded-xl font-bold">删除</button>
                 </div>
                 <div id="edit-actions" class="hidden flex space-x-3 w-full">
-                    <button onclick="handleSave()" id="btn-save" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg hover:bg-orange-500">确认保存</button>
-                    <button onclick="closeModal()" class="px-8 py-4 bg-zinc-800 text-white rounded-xl font-bold">取消</button>
+                    <button onclick="handleSave()" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black">确认保存</button>
+                    <button onclick="closeModal()" class="px-8 py-4 bg-zinc-800 rounded-xl">取消</button>
                 </div>
             </div>
         </div>
