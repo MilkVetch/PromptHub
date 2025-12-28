@@ -12,7 +12,7 @@ const elements = {
 };
 
 window.onload = () => {
-    // 自动填充配置输入框，让用户能看到
+    // 设置页回显当前的 Token 和 ID
     document.getElementById('gh-token').value = config.token || '';
     document.getElementById('gist-id').value = config.gistId || '';
     
@@ -24,9 +24,6 @@ function toggleConfig() {
     document.getElementById('config-section').classList.toggle('hidden');
 }
 
-// ===========================
-// 增强：分类重命名
-// ===========================
 function renameCategory(oldName) {
     const newName = prompt(`将分类 [${oldName}] 修改为:`, oldName);
     if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
@@ -37,9 +34,6 @@ function renameCategory(oldName) {
     }
 }
 
-// ===========================
-// 渲染逻辑
-// ===========================
 function render(filter = "") {
     elements.listContainer.innerHTML = '';
     const filtered = prompts.filter(p => 
@@ -50,7 +44,6 @@ function render(filter = "") {
     document.getElementById('category-suggestions').innerHTML = cats.map(c => `<option value="${c}">`).join('');
 
     let hasVisible = false;
-
     cats.forEach(cat => {
         const catItems = filtered.filter(p => (p.category || "未分类") === cat);
         if (catItems.length === 0) return;
@@ -61,7 +54,7 @@ function render(filter = "") {
         section.innerHTML = `
             <div class="category-header">
                 <span class="text-[#ff9900] font-black tracking-widest text-sm uppercase">${cat}</span>
-                <button onclick="renameCategory('${cat}')" class="btn-edit-cat">RENAME</button>
+                <button onclick="renameCategory('${cat}')" class="btn-edit-cat">修改名称</button>
                 <span class="text-zinc-800 text-[10px] font-black ml-auto">${catItems.length} ITEMS</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 list-grid" data-category="${cat}"></div>
@@ -86,7 +79,7 @@ function render(filter = "") {
                 </div>
                 <div class="flex justify-between items-center mt-auto">
                     <span class="text-[9px] font-black text-zinc-700 uppercase tracking-widest">Prompt Card</span>
-                    <div class="text-zinc-800 group-hover:text-[#ff9900] transition-colors">
+                    <div class="text-zinc-800 group-hover:text-[#ff9900]">
                         <svg width="20" height="20" fill="currentColor"><circle cx="6" cy="6" r="1.5"/><circle cx="14" cy="6" r="1.5"/><circle cx="6" cy="14" r="1.5"/><circle cx="14" cy="14" r="1.5"/></svg>
                     </div>
                 </div>
@@ -98,9 +91,7 @@ function render(filter = "") {
     document.getElementById('empty-state').classList.toggle('hidden', hasVisible);
 }
 
-// ===========================
-// 核心：二维插入检测 (PC端+移动端适配)
-// ===========================
+// 二维拖拽：支持左右插入
 function bindDragEvents(el, index) {
     el.ondragstart = (e) => {
         draggedItemIndex = index;
@@ -118,23 +109,16 @@ function bindDragEvents(el, index) {
         
         clearDropIndicators();
         
-        // 同时判断 X 和 Y 轴
-        // 如果是窄屏（单列），Y 轴逻辑占主导；宽屏下，X 轴决定前后
-        const isLeft = e.clientX < midX;
-        const isAbove = e.clientY < midY;
-        
-        // 视觉反馈优化：在宽屏下侧重显示左右线条，在窄屏下显示上下线条
-        if (window.innerWidth > 640) {
-            el.classList.add(isLeft ? 'drop-target-left' : 'drop-target-right');
-        } else {
-            el.classList.add(isAbove ? 'drop-target-above' : 'drop-target-below');
+        if (window.innerWidth > 640) { // 宽屏多列判断左右
+            el.classList.add(e.clientX < midX ? 'drop-target-left' : 'drop-target-right');
+        } else { // 窄屏单列判断上下
+            el.classList.add(e.clientY < midY ? 'drop-target-above' : 'drop-target-below');
         }
     };
     el.ondrop = (e) => {
         e.preventDefault();
         const rect = el.getBoundingClientRect();
-        // 只要是在左侧或者上方，都视为“插入其前”
-        const isBefore = (e.clientX < rect.left + rect.width / 2) || (e.clientY < rect.top + rect.height / 2);
+        const isBefore = (window.innerWidth > 640) ? (e.clientX < rect.left + rect.width / 2) : (e.clientY < rect.top + rect.height / 2);
         handleMove(draggedItemIndex, index, isBefore);
     };
 }
@@ -175,9 +159,6 @@ async function handleMove(fromIdx, toIdx, isBefore) {
     render(); await pushData();
 }
 
-// ===========================
-// CRUD & Cloud Sync
-// ===========================
 function openViewModal(index) {
     currentModalIndex = index;
     const p = prompts[index];
@@ -226,15 +207,14 @@ async function handleSave() {
     const category = document.getElementById('p-category').value.trim() || "未分类";
     if (!title || !content) return;
 
-    const data = { title, content, category };
-    if (currentModalIndex === -1) prompts.push(data);
-    else prompts[currentModalIndex] = data;
+    if (currentModalIndex === -1) prompts.push({ title, content, category });
+    else prompts[currentModalIndex] = { title, content, category };
     
     render(); closeModal(); await pushData();
 }
 
 function deleteFromModal() {
-    if (confirm('永久删除该 Prompt？')) {
+    if (confirm('确认删除？')) {
         prompts.splice(currentModalIndex, 1);
         render(); closeModal(); pushData();
     }
@@ -242,16 +222,17 @@ function deleteFromModal() {
 
 function copyFromModal(btn) {
     navigator.clipboard.writeText(prompts[currentModalIndex].content);
-    const old = btn.innerText; btn.innerText = "SUCCESS!";
+    const old = btn.innerText; btn.innerText = "COPIED!";
     setTimeout(() => btn.innerText = old, 1500);
 }
 
 function handleSearch() { render(elements.searchBar.value.toLowerCase()); }
 
 async function saveConfig() {
-    const token = document.getElementById('gh-token').value.trim();
-    const gistId = document.getElementById('gist-id').value.trim();
-    config = { token, gistId };
+    config = { 
+        token: document.getElementById('gh-token').value.trim(), 
+        gistId: document.getElementById('gist-id').value.trim() 
+    };
     localStorage.setItem('gist_config', JSON.stringify(config));
     await fetchData();
     document.getElementById('config-section').classList.add('hidden');
@@ -259,20 +240,20 @@ async function saveConfig() {
 
 async function fetchData() {
     if (!config.token || !config.gistId) return;
-    updateStatus('正在云端数据同步...', true);
+    updateStatus('同步数据中...', true);
     try {
         const res = await fetch(`https://api.github.com/gists/${config.gistId}`, { 
             headers: { 'Authorization': `token ${config.token}` } 
         });
         const data = await res.json();
         prompts = JSON.parse(data.files['prompts.json'].content);
-        render(); updateStatus('同步完成');
-    } catch (e) { updateStatus('配置有误，请检查 Token 和 ID'); }
+        render(); updateStatus('同步成功');
+    } catch (e) { updateStatus('获取失败，请重试'); }
 }
 
 async function pushData() {
     if (!config.token) return;
-    updateStatus('上传中...', true);
+    updateStatus('正在保存...', true);
     try {
         const res = await fetch(config.gistId ? `https://api.github.com/gists/${config.gistId}` : `https://api.github.com/gists`, {
             method: config.gistId ? 'PATCH' : 'POST',
@@ -297,9 +278,4 @@ function updateStatus(msg, show = false) {
     if (!show) setTimeout(() => elements.statusBar.classList.add('hidden'), 2500);
 }
 
-function resetConfig() { 
-    if(confirm('重置会注销本地配置，确定吗？')) { 
-        localStorage.clear(); 
-        location.reload(); 
-    } 
-}
+function resetConfig() { if(confirm('重置注销？')) { localStorage.clear(); location.reload(); } }

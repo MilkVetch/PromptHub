@@ -12,28 +12,26 @@
 
     <div class="container mx-auto px-4 py-8 max-w-5xl flex-grow">
         <header class="flex justify-between items-center mb-10 p-6 rounded-3xl bg-[#111] border border-zinc-900 shadow-2xl">
-            <div class="flex items-center cursor-pointer" onclick="location.reload()">
-                <span class="text-3xl font-black tracking-tighter italic">P</span>
-                <span class="text-2xl font-black bg-[#ff9900] text-black px-2 py-0.5 rounded-lg ml-1">Hub</span>
+            <div class="flex items-center cursor-pointer select-none" onclick="location.reload()">
+                <span class="text-2xl font-black tracking-tighter">Prompt</span>
+                <span class="text-2xl font-black text-black bg-[#ff9900] px-2 ml-1 rounded-md tracking-tighter">Hub</span>
             </div>
-            <button onclick="toggleConfig()" class="text-zinc-500 hover:text-[#ff9900] font-bold transition-colors flex items-center gap-2">
-                <span>⚙️ 同步设置</span>
-            </button>
+            <button onclick="toggleConfig()" class="text-zinc-500 hover:text-[#ff9900] font-bold transition-colors">⚙️ 同步设置</button>
         </header>
 
         <section id="config-section" class="hidden mb-8 p-8 bg-[#111] border border-zinc-800 rounded-3xl animate-scale-in">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
-                    <label class="text-xs font-black text-zinc-500 uppercase ml-1">GitHub Personal Token</label>
+                    <label class="text-xs font-black text-zinc-500 uppercase ml-1">GitHub Token</label>
                     <input type="password" id="gh-token" placeholder="未设置" class="w-full p-4 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] text-sm">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-xs font-black text-zinc-500 uppercase ml-1">Current Gist ID</label>
+                    <label class="text-xs font-black text-zinc-500 uppercase ml-1">Gist ID</label>
                     <input type="text" id="gist-id" placeholder="未关联" class="w-full p-4 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] text-sm">
                 </div>
             </div>
             <div class="flex gap-4 mt-8">
-                <button onclick="saveConfig()" class="flex-grow bg-[#ff9900] text-black py-4 rounded-2xl font-black hover:scale-[1.02] transition-transform">保存并应用</button>
+                <button onclick="saveConfig()" class="flex-grow bg-[#ff9900] text-black py-4 rounded-2xl font-black hover:scale-[1.01] transition-transform">保存配置</button>
                 <button onclick="resetConfig()" class="px-8 py-4 bg-zinc-900 text-zinc-500 rounded-2xl font-bold border border-zinc-800">注销同步</button>
             </div>
         </section>
@@ -43,10 +41,10 @@
         <main>
             <div class="flex flex-col md:flex-row gap-4 mb-12">
                 <div class="relative flex-grow">
-                    <input type="text" id="search-bar" oninput="handleSearch()" placeholder="全站搜索标题或内容..." class="w-full p-5 bg-[#111] border border-zinc-800 rounded-3xl outline-none focus:border-[#ff9900] pl-14 shadow-inner">
+                    <input type="text" id="search-bar" oninput="handleSearch()" placeholder="搜索标题或内容..." class="w-full p-5 bg-[#111] border border-zinc-800 rounded-3xl outline-none focus:border-[#ff9900] pl-14">
                     <span class="absolute left-6 top-5 opacity-20 text-xl">🔍</span>
                 </div>
-                <button onclick="openCreateModal()" class="bg-[#ff9900] hover:bg-orange-500 text-black font-black text-lg px-10 py-5 rounded-3xl shadow-xl whitespace-nowrap active:scale-95 transition-all">
+                <button onclick="openCreateModal()" class="bg-[#ff9900] hover:bg-orange-500 text-black font-black text-lg px-10 py-5 rounded-3xl shadow-xl active:scale-95 transition-all">
                     + NEW PROMPT
                 </button>
             </div>
@@ -69,10 +67,10 @@
                 <div id="view-mode-content" class="hidden markdown-body"><div id="modal-content-html"></div></div>
                 <div id="edit-mode-form" class="hidden space-y-6">
                     <div class="grid grid-cols-2 gap-4">
-                        <input type="text" id="p-category" list="category-suggestions" placeholder="分类 (留空为未分类)..." class="p-5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900]">
+                        <input type="text" id="p-category" list="category-suggestions" placeholder="分类..." class="p-5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900]">
                         <input type="text" id="p-title" placeholder="标题..." class="p-5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900]">
                     </div>
-                    <textarea id="p-content" rows="12" placeholder="内容 (支持 Markdown)..." class="w-full p-6 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] font-mono leading-relaxed"></textarea>
+                    <textarea id="p-content" rows="12" placeholder="Markdown 内容..." class="w-full p-6 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900] font-mono"></textarea>
                 </div>
             </div>
             <div id="modal-footer" class="p-8 bg-zinc-950/50 flex gap-4">
