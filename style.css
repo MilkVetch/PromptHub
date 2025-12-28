@@ -1,60 +1,35 @@
-/* 自定义配色 */
+/* PH 风格配色 */
 :root {
     --ph-orange: #ff9900;
     --ph-black: #000000;
     --ph-dark: #1b1b1b;
 }
 
-/* 拖拽状态样式 */
-.dragging {
-    opacity: 0.4;
-    border: 2px dashed var(--ph-orange) !important;
-    transform: scale(0.95);
-    background-color: var(--ph-black) !important;
-}
-
-/* 拖拽手柄样式 */
+/* 列表卡片手柄样式 */
 .title-card {
     cursor: grab;
     user-select: none;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
 }
 .title-card:active {
     cursor: grabbing;
 }
 
-/* 暗黑模式滚动条 */
-.custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: var(--ph-black);
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: var(--ph-orange);
+/* 正在拖拽中的卡片外观 */
+.dragging {
+    opacity: 0.4;
+    border: 2px dashed var(--ph-orange) !important;
+    transform: scale(0.96);
 }
 
-/* 动画 */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-@keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+/* 滚动条美化 */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: var(--ph-black); }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--ph-orange); }
+
+/* 动画效果 */
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 .animate-scale-in { animation: scaleIn 0.25s ease-out forwards; }
-
-/* 新增：心跳动画 */
-@keyframes heartbeat {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-}
-.heart-beat {
-    animation: heartbeat 1.5s ease-in-out infinite;
-}
+.heart-beat { animation: heartbeat 1.5s ease-in-out infinite; }

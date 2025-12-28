@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="font-sans min-h-screen bg-black text-white">
+<body class="font-sans min-h-screen bg-black text-white flex flex-col">
 
-    <div class="container mx-auto px-4 py-6 max-w-4xl relative z-10 min-h-screen flex flex-col">
-        <header class="flex justify-between items-center mb-6 p-4 rounded-xl bg-[#1b1b1b] border border-zinc-800 shadow-xl flex-shrink-0">
+    <div class="container mx-auto px-4 py-6 max-w-4xl relative z-10 flex-grow">
+        <header class="flex justify-between items-center mb-6 p-4 rounded-xl bg-[#1b1b1b] border border-zinc-800 shadow-xl">
             <div class="flex items-center select-none cursor-pointer" onclick="location.reload()">
                 <span class="text-2xl font-black tracking-tighter">Prompt</span>
                 <span class="text-2xl font-black text-black bg-[#ff9900] px-2 ml-1 rounded-md tracking-tighter">Hub</span>
@@ -20,7 +20,7 @@
             </button>
         </header>
 
-        <section id="config-section" class="hidden mb-6 p-6 bg-[#1b1b1b] border border-zinc-800 rounded-2xl shadow-2xl animate-fade-in flex-shrink-0">
+        <section id="config-section" class="hidden mb-6 p-6 bg-[#1b1b1b] border border-zinc-800 rounded-2xl shadow-2xl animate-fade-in">
             <h2 class="font-bold text-white text-lg mb-4">☁️ GitHub Gist 配置</h2>
             <div class="space-y-4">
                 <input type="password" id="gh-token" placeholder="GitHub Token (ghp_...)" 
@@ -34,14 +34,14 @@
             </div>
         </section>
 
-        <div id="status-bar" class="mb-6 p-3 rounded-xl text-sm flex items-center justify-center bg-zinc-900 border border-zinc-800 text-zinc-400 hidden flex-shrink-0">
+        <div id="status-bar" class="mb-6 p-3 rounded-xl text-sm flex items-center justify-center bg-zinc-900 border border-zinc-800 text-zinc-400 hidden">
             <span id="status-text">准备就绪</span>
         </div>
 
-        <main class="flex-grow">
+        <main>
             <div class="flex flex-col md:flex-row gap-4 mb-8">
                 <div class="relative flex-grow">
-                    <input type="text" id="search-bar" oninput="handleSearch()" placeholder="搜索 Prompt 标题关键词..." 
+                    <input type="text" id="search-bar" oninput="handleSearch()" placeholder="搜索关键词..." 
                         class="w-full p-4 bg-[#1b1b1b] border-2 border-zinc-800 rounded-2xl text-white outline-none focus:border-[#ff9900] transition-all pl-12">
                     <span class="absolute left-4 top-4 opacity-30 text-xl">🔍</span>
                 </div>
@@ -50,20 +50,18 @@
                 </button>
             </div>
 
-            <div id="list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                </div>
+            <div id="list" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
             
             <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-zinc-600">
                 <p class="text-lg font-bold">没有发现相关的 Prompt</p>
             </div>
         </main>
-
-        <footer class="mt-8 py-6 text-center text-zinc-600 text-sm font-bold select-none flex-shrink-0">
-            <span>© Khee</span>
-            <span class="text-[#ff9900] mx-1 inline-block heart-beat">❤️</span>
-        </footer>
-
     </div>
+
+    <footer class="py-8 text-center text-zinc-600 text-sm font-bold select-none">
+        <span>© Khee</span>
+        <span class="text-[#ff9900] mx-1 inline-block heart-beat">❤️</span>
+    </footer>
 
     <div id="modal-backdrop" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div id="modal-container" class="bg-[#1b1b1b] border border-zinc-800 w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-scale-in overflow-hidden">
@@ -80,7 +78,7 @@
                     <input type="hidden" id="edit-index" value="-1">
                     <input type="text" id="p-title" placeholder="Prompt 标题..." 
                         class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] text-xl font-bold">
-                    <textarea id="p-content" rows="12" placeholder="在此粘贴你的 AI Prompt 指令内容..." 
+                    <textarea id="p-content" rows="12" placeholder="在此粘贴内容..." 
                         class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] resize-none custom-scrollbar leading-relaxed"></textarea>
                 </div>
             </div>
@@ -88,12 +86,12 @@
             <div id="modal-footer" class="p-6 border-t border-zinc-800 bg-zinc-900/80 flex space-x-3">
                 <div id="view-actions" class="hidden flex space-x-3 w-full">
                     <button onclick="copyFromModal(this)" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg hover:bg-orange-500 transition-all">一键复制内容</button>
-                    <button onclick="switchToEditMode()" class="px-6 py-4 bg-zinc-800 text-white rounded-xl font-bold hover:bg-zinc-700 transition-all">修改</button>
-                    <button onclick="deleteFromModal()" class="px-6 py-4 bg-zinc-900 text-red-600 rounded-xl font-bold hover:bg-red-950 transition-all">删除</button>
+                    <button onclick="switchToEditMode()" class="px-6 py-4 bg-zinc-800 text-white rounded-xl font-bold">修改</button>
+                    <button onclick="deleteFromModal()" class="px-6 py-4 bg-zinc-900 text-red-600 rounded-xl font-bold">删除</button>
                 </div>
                 <div id="edit-actions" class="hidden flex space-x-3 w-full">
                     <button onclick="handleSave()" id="btn-save" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg hover:bg-orange-500">确认保存</button>
-                    <button onclick="closeModal()" class="px-8 py-4 bg-zinc-800 text-white rounded-xl font-bold hover:bg-zinc-700">取消</button>
+                    <button onclick="closeModal()" class="px-8 py-4 bg-zinc-800 text-white rounded-xl font-bold">取消</button>
                 </div>
             </div>
         </div>

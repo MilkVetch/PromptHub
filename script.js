@@ -22,7 +22,7 @@ const elements = {
 };
 
 // ===========================
-// 初始化
+// 初始化与渲染
 // ===========================
 window.onload = () => {
     if (!config.token) {
@@ -30,24 +30,15 @@ window.onload = () => {
     } else {
         fetchData();
     }
-    // 允许拖放容器接收目标
     elements.listContainer.addEventListener('dragover', e => e.preventDefault());
 };
 
-// ===========================
-// 搜索过滤
-// ===========================
 function handleSearch() {
-    const keyword = elements.searchBar.value.toLowerCase();
-    render(keyword);
+    render(elements.searchBar.value.toLowerCase());
 }
 
-// ===========================
-// 渲染主列表 (核心逻辑)
-// ===========================
 function render(filter = "") {
     elements.listContainer.innerHTML = '';
-    // 模糊搜索：标题包含关键词即可
     const filteredPrompts = prompts.filter(p => p.title.toLowerCase().includes(filter));
 
     if (filteredPrompts.length === 0) {
@@ -61,7 +52,7 @@ function render(filter = "") {
         const card = document.createElement('div');
         card.className = 'title-card bg-[#1b1b1b] p-6 rounded-2xl border border-zinc-800 hover:border-[#ff9900] shadow-lg flex justify-between items-center group';
         
-        // 只有在非搜索状态下允许拖拽，防止逻辑混乱
+        // 搜索状态下禁用拖拽
         if (filter === "") {
             card.draggable = true;
             card.ondragstart = (e) => {
@@ -75,10 +66,14 @@ function render(filter = "") {
         card.innerHTML = `
             <div class="flex-grow cursor-pointer" onclick="openViewModal(${realIndex})">
                 <h3 class="font-bold text-white group-hover:text-[#ff9900] text-lg transition-colors truncate pr-4">${p.title}</h3>
-                <p class="text-zinc-600 text-xs mt-1">点击查看详情</p>
+                <p class="text-zinc-600 text-xs mt-1">查看内容</p>
             </div>
-            <div class="text-zinc-700 group-hover:text-[#ff9900] cursor-grab active:cursor-grabbing">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M10 9h4V5h3l-5-5-5 5h3v4zm0 6H7v3l-5-5 5-5v3h3v4zm4 0h3v-3l5 5-5 5v-3h-3v-4zm-4 0v4H7l5 5 5-5h-3v-4h-4z"/></svg>
+            <div class="text-zinc-700 group-hover:text-[#ff9900] flex flex-col space-y-1">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
+                    <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
+                    <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
+                </svg>
             </div>
         `;
         elements.listContainer.appendChild(card);
@@ -91,11 +86,11 @@ function handleDrop(targetIndex) {
     prompts.splice(targetIndex, 0, movedItem);
     draggedItemIndex = null;
     render();
-    pushData(); // 排序后自动同步
+    pushData();
 }
 
 // ===========================
-// 弹窗管理
+// 弹窗与交互逻辑
 // ===========================
 function openCreateModal() {
     currentModalIndex = -1;
@@ -128,7 +123,7 @@ function switchToEditMode() {
     elements.titleInput.value = p.title;
     elements.contentInput.value = p.content;
     showModalMode('edit');
-    elements.modalTitle.innerText = "修改内容";
+    elements.modalTitle.innerText = "修改";
 }
 
 function showModal(show) {
@@ -138,91 +133,72 @@ function showModal(show) {
 
 function closeModal() { showModal(false); }
 
-// ===========================
-// 数据操作 (CRUD)
-// ===========================
 function handleSave() {
     const title = elements.titleInput.value.trim();
     const content = elements.contentInput.value.trim();
-    if (!title || !content) { alert('标题和内容缺一不可'); return; }
+    if (!title || !content) return;
 
-    const data = { title, content, time: new Date().getTime() };
-    if (currentModalIndex === -1) {
-        prompts.unshift(data);
-    } else {
-        prompts[currentModalIndex] = data;
-    }
-    render();
-    closeModal();
-    pushData();
+    if (currentModalIndex === -1) prompts.unshift({ title, content });
+    else prompts[currentModalIndex] = { title, content };
+    
+    render(); closeModal(); pushData();
 }
 
 function deleteFromModal() {
-    if (confirm('确认销毁这条记录吗？')) {
+    if (confirm('确认删除？')) {
         prompts.splice(currentModalIndex, 1);
-        render();
-        closeModal();
-        pushData();
+        render(); closeModal(); pushData();
     }
 }
 
 function copyFromModal(btn) {
     navigator.clipboard.writeText(elements.modalContentText.innerText);
-    const origin = btn.innerText;
-    btn.innerText = "复制成功！";
+    const origin = btn.innerText; btn.innerText = "已复制！";
     btn.classList.replace('bg-[#ff9900]', 'bg-green-600');
     setTimeout(() => {
         btn.innerText = origin;
         btn.classList.replace('bg-green-600', 'bg-[#ff9900]');
-    }, 1500);
+    }, 1200);
 }
 
 // ===========================
-// 云同步逻辑
+// 同步逻辑 (GitHub Gist)
 // ===========================
-function toggleConfigPanel() {
-    document.getElementById('config-section').classList.toggle('hidden');
-}
+function toggleConfigPanel() { document.getElementById('config-section').classList.toggle('hidden'); }
 
 function saveConfig() {
     const token = document.getElementById('gh-token').value.trim();
     const id = document.getElementById('gist-id').value.trim();
-    if (!token.startsWith('ghp_')) { alert('Token 必须以 ghp_ 开头'); return; }
+    if (!token.startsWith('ghp_')) { alert('Token 格式错误'); return; }
     config = { token, gistId: id };
     localStorage.setItem('gist_config', JSON.stringify(config));
-    fetchData();
-    toggleConfigPanel();
+    fetchData(); toggleConfigPanel();
 }
 
 async function fetchData() {
     if (!config.token || !config.gistId) return;
-    updateStatus('同步云端中...', true);
+    updateStatus('同步中...', true);
     try {
         const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
             headers: { 'Authorization': `token ${config.token}` }
         });
-        if (!res.ok) throw new Error();
         const data = await res.json();
         prompts = JSON.parse(data.files['prompts.json'].content);
-        render();
-        updateStatus('云端同步完成');
-    } catch (e) {
-        updateStatus('同步失败，请检查配置', false);
-    }
+        render(); updateStatus('同步完成');
+    } catch (e) { updateStatus('同步失败', false); }
 }
 
 async function pushData() {
     if (!config.token) return;
-    updateStatus('正在保存至云端...', true);
+    updateStatus('正在云端同步...', true);
     const method = config.gistId ? 'PATCH' : 'POST';
     const url = config.gistId ? `https://api.github.com/gists/${config.gistId}` : `https://api.github.com/gists`;
     
     try {
         const res = await fetch(url, {
             method: method,
-            headers: { 'Authorization': `token ${config.token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `token ${config.token}` },
             body: JSON.stringify({
-                description: "Prompt Hub Sync",
                 files: { "prompts.json": { content: JSON.stringify(prompts, null, 2) } }
             })
         });
@@ -232,20 +208,13 @@ async function pushData() {
             localStorage.setItem('gist_config', JSON.stringify(config));
         }
         updateStatus('云端已更新');
-    } catch (e) {
-        updateStatus('云端更新失败');
-    }
+    } catch (e) { updateStatus('上传失败'); }
 }
 
 function updateStatus(msg, loading = false) {
     elements.statusBar.classList.remove('hidden');
     elements.statusText.innerText = msg;
-    if (!loading) setTimeout(() => elements.statusBar.classList.add('hidden'), 3000);
+    if (!loading) setTimeout(() => elements.statusBar.classList.add('hidden'), 2000);
 }
 
-function resetConfig() {
-    if(confirm('确定清空本地配置吗？')) {
-        localStorage.clear();
-        location.reload();
-    }
-}
+function resetConfig() { if(confirm('重置？')) { localStorage.clear(); location.reload(); } }
