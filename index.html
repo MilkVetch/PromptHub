@@ -20,6 +20,13 @@
         </header>
 
         <section id="config-section" class="hidden mb-8 p-8 bg-[#111] border border-zinc-800 rounded-3xl animate-modal relative z-50">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-sm font-black text-zinc-400 uppercase tracking-widest">云端同步设置</h3>
+                <a href="https://github.com/MilkVetch/PromptHub" target="_blank" class="text-xs text-[#ff9900] flex items-center gap-1 hover:brightness-110 transition-all font-bold">
+                    <span>📖 如何使用 & 配置指引</span>
+                    <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+                </a>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
                     <label class="text-xs font-black text-zinc-500 uppercase ml-1">GitHub Token</label>
@@ -72,7 +79,9 @@
                 <button onclick="closeModal()" class="text-zinc-600 hover:text-white text-3xl">✕</button>
             </div>
             <div class="p-8 overflow-y-auto custom-scrollbar flex-grow">
-                <div id="view-mode-content" class="hidden markdown-body"><div id="modal-content-html" class="whitespace-pre-wrap"></div></div>
+                <div id="view-mode-content" class="hidden markdown-body">
+                    <div id="modal-content-html" class="whitespace-pre-wrap"></div>
+                </div>
                 <div id="edit-mode-form" class="hidden space-y-6">
                     <div class="grid grid-cols-2 gap-4">
                         <input type="text" id="p-category" list="category-suggestions" placeholder="分类..." class="p-5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900]">
