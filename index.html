@@ -2,7 +2,7 @@
 <html lang="zh-CN" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Prompt Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -72,7 +72,7 @@
                 <button onclick="closeModal()" class="text-zinc-600 hover:text-white text-3xl">✕</button>
             </div>
             <div class="p-8 overflow-y-auto custom-scrollbar flex-grow">
-                <div id="view-mode-content" class="hidden markdown-body"><div id="modal-content-html"></div></div>
+                <div id="view-mode-content" class="hidden markdown-body"><div id="modal-content-html" class="whitespace-pre-wrap"></div></div>
                 <div id="edit-mode-form" class="hidden space-y-6">
                     <div class="grid grid-cols-2 gap-4">
                         <input type="text" id="p-category" list="category-suggestions" placeholder="分类..." class="p-5 bg-black border border-zinc-800 rounded-2xl outline-none focus:border-[#ff9900]">
