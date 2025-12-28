@@ -21,15 +21,13 @@
         </header>
 
         <section id="config-section" class="hidden mb-6 p-6 bg-[#1b1b1b] border border-zinc-800 rounded-2xl shadow-2xl animate-fade-in">
-            <h2 class="font-bold text-white text-lg mb-4 text-[#ff9900]">☁️ GitHub Gist 配置</h2>
+            <h2 class="font-bold text-[#ff9900] text-lg mb-4">☁️ GitHub Gist 配置</h2>
             <div class="space-y-4">
-                <input type="password" id="gh-token" placeholder="GitHub Token (ghp_...)" 
-                    class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
-                <input type="text" id="gist-id" placeholder="Gist ID (第一次用请留空)" 
-                    class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
+                <input type="password" id="gh-token" placeholder="GitHub Token (ghp_...)" class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
+                <input type="text" id="gist-id" placeholder="Gist ID" class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
                 <div class="flex space-x-3">
-                    <button onclick="saveConfig()" class="flex-1 bg-[#ff9900] text-black py-3 rounded-xl font-bold hover:bg-orange-500 transition-all">保存配置</button>
-                    <button onclick="resetConfig()" class="px-4 py-3 text-zinc-400 border border-zinc-800 rounded-xl hover:text-red-500">重置</button>
+                    <button onclick="saveConfig()" class="flex-1 bg-[#ff9900] text-black py-3 rounded-xl font-bold hover:bg-orange-500">保存配置</button>
+                    <button onclick="resetConfig()" class="px-4 py-3 text-zinc-400 border border-zinc-800 rounded-xl">重置</button>
                 </div>
             </div>
         </section>
@@ -41,8 +39,7 @@
         <main>
             <div class="flex flex-col md:flex-row gap-4 mb-8">
                 <div class="relative flex-grow">
-                    <input type="text" id="search-bar" oninput="handleSearch()" placeholder="搜索 Prompt 标题..." 
-                        class="w-full p-4 bg-[#1b1b1b] border-2 border-zinc-800 rounded-2xl text-white outline-none focus:border-[#ff9900] transition-all pl-12">
+                    <input type="text" id="search-bar" oninput="handleSearch()" placeholder="搜索关键词..." class="w-full p-4 bg-[#1b1b1b] border-2 border-zinc-800 rounded-2xl text-white outline-none focus:border-[#ff9900] pl-12">
                     <span class="absolute left-4 top-4 opacity-30 text-xl">🔍</span>
                 </div>
                 <button onclick="openCreateModal()" class="bg-[#ff9900] hover:bg-orange-500 text-black font-black text-lg px-8 py-4 rounded-2xl shadow-lg transition-all active:scale-95 whitespace-nowrap">
@@ -50,7 +47,8 @@
                 </button>
             </div>
 
-            <div id="list" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            <div id="list-container" class="space-y-10">
+                </div>
             
             <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-zinc-600">
                 <p class="text-lg font-bold">没有发现相关的 Prompt</p>
@@ -66,8 +64,11 @@
     <div id="modal-backdrop" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div id="modal-container" class="bg-[#1b1b1b] border border-zinc-800 w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-scale-in overflow-hidden">
             <div class="flex justify-between items-center p-6 border-b border-zinc-800 bg-zinc-900/50">
-                <h3 id="modal-title" class="text-xl font-black text-[#ph-orange] truncate mr-4">详情</h3>
-                <button onclick="closeModal()" class="text-zinc-500 hover:text-white text-2xl font-bold">✕</button>
+                <div class="flex items-center space-x-3 truncate mr-4">
+                    <span id="modal-category-badge" class="px-2 py-0.5 rounded text-[10px] font-black bg-zinc-800 text-zinc-400 uppercase">分类</span>
+                    <h3 id="modal-title" class="text-xl font-black text-[#ff9900] truncate">详情</h3>
+                </div>
+                <button onclick="closeModal()" class="text-zinc-500 hover:text-white text-2xl font-bold px-2">✕</button>
             </div>
 
             <div class="p-6 overflow-y-auto custom-scrollbar flex-grow text-zinc-200">
@@ -76,22 +77,26 @@
                 </div>
                 <div id="edit-mode-form" class="hidden space-y-5">
                     <input type="hidden" id="edit-index" value="-1">
-                    <input type="text" id="p-title" placeholder="Prompt 标题..." 
-                        class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] text-xl font-bold">
-                    <textarea id="p-content" rows="12" placeholder="在此粘贴内容..." 
-                        class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] resize-none custom-scrollbar leading-relaxed"></textarea>
+                    <div class="flex gap-4">
+                        <select id="p-category" class="bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] px-4 font-bold text-sm">
+                            <option value="工作流">工作流</option>
+                            <option value="其他">其他</option>
+                        </select>
+                        <input type="text" id="p-title" placeholder="标题..." class="flex-grow p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] font-bold">
+                    </div>
+                    <textarea id="p-content" rows="12" placeholder="在此粘贴内容..." class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] resize-none custom-scrollbar leading-relaxed"></textarea>
                 </div>
             </div>
 
             <div id="modal-footer" class="p-6 border-t border-zinc-800 bg-zinc-900/80 flex space-x-3">
                 <div id="view-actions" class="hidden flex space-x-3 w-full">
-                    <button onclick="copyFromModal(this)" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg hover:bg-orange-500 transition-all">一键复制内容</button>
-                    <button onclick="switchToEditMode()" class="px-6 py-4 bg-zinc-800 text-white rounded-xl font-bold hover:bg-zinc-700 transition-all">修改</button>
-                    <button onclick="deleteFromModal()" class="px-6 py-4 bg-zinc-900 text-red-600 rounded-xl font-bold hover:bg-red-950 transition-all">删除</button>
+                    <button onclick="copyFromModal(this)" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg hover:bg-orange-500">一键复制内容</button>
+                    <button onclick="switchToEditMode()" class="px-6 py-4 bg-zinc-800 text-white rounded-xl font-bold">修改</button>
+                    <button onclick="deleteFromModal()" class="px-6 py-4 bg-zinc-900 text-red-600 rounded-xl font-bold">删除</button>
                 </div>
                 <div id="edit-actions" class="hidden flex space-x-3 w-full">
                     <button onclick="handleSave()" id="btn-save" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg hover:bg-orange-500">确认保存</button>
-                    <button onclick="closeModal()" class="px-8 py-4 bg-zinc-800 text-white rounded-xl font-bold hover:bg-zinc-700 transition-all">取消</button>
+                    <button onclick="closeModal()" class="px-8 py-4 bg-zinc-800 text-white rounded-xl font-bold">取消</button>
                 </div>
             </div>
         </div>

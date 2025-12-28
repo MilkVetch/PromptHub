@@ -3,90 +3,88 @@ let config = JSON.parse(localStorage.getItem('gist_config')) || { token: '', gis
 let currentModalIndex = -1;
 let draggedItemIndex = null;
 
+const categories = ["工作流", "其他"];
+
 const elements = {
-    listContainer: document.getElementById('list'),
+    listContainer: document.getElementById('list-container'),
     searchBar: document.getElementById('search-bar'),
     emptyState: document.getElementById('empty-state'),
     modalBackdrop: document.getElementById('modal-backdrop'),
     modalTitle: document.getElementById('modal-title'),
+    modalCategoryBadge: document.getElementById('modal-category-badge'),
     viewModeContent: document.getElementById('view-mode-content'),
     modalContentText: document.getElementById('modal-content-text'),
     editModeForm: document.getElementById('edit-mode-form'),
     titleInput: document.getElementById('p-title'),
+    categoryInput: document.getElementById('p-category'),
     contentInput: document.getElementById('p-content'),
-    editIndexInput: document.getElementById('edit-index'),
     viewActions: document.getElementById('view-actions'),
     editActions: document.getElementById('edit-actions'),
     statusBar: document.getElementById('status-bar'),
     statusText: document.getElementById('status-text')
 };
 
-// ===========================
-// 初始化与自动纠错
-// ===========================
 window.onload = () => {
-    // 自动纠错：如果检测到错误的 "undefined" 字符串，强行清空
-    if (config.gistId === 'undefined' || config.gistId === 'null') {
-        config.gistId = '';
-        localStorage.setItem('gist_config', JSON.stringify(config));
-    }
-
-    if (!config.token) {
-        document.getElementById('config-section').classList.remove('hidden');
-        updateStatus('请点击设置按钮配置 Token', false);
-    } else {
-        fetchData();
-    }
-    elements.listContainer.addEventListener('dragover', e => e.preventDefault());
+    if (!config.token) document.getElementById('config-section').classList.remove('hidden');
+    else fetchData();
 };
 
-function handleSearch() {
-    render(elements.searchBar.value.toLowerCase());
-}
+function handleSearch() { render(elements.searchBar.value.toLowerCase()); }
 
 // ===========================
-// 渲染逻辑
+// 渲染逻辑：按分类分组渲染
 // ===========================
 function render(filter = "") {
     elements.listContainer.innerHTML = '';
-    const filteredPrompts = prompts.filter(p => p.title.toLowerCase().includes(filter));
+    let hasResults = false;
 
-    if (filteredPrompts.length === 0) {
-        elements.emptyState.classList.remove('hidden');
-        return;
-    }
-    elements.emptyState.classList.add('hidden');
-
-    filteredPrompts.forEach((p, i) => {
-        const realIndex = prompts.indexOf(p);
-        const card = document.createElement('div');
-        card.className = 'title-card bg-[#1b1b1b] p-6 rounded-2xl border border-zinc-800 hover:border-[#ff9900] shadow-lg flex justify-between items-center group animate-fade-in';
+    categories.forEach(catName => {
+        // 过滤出属于该分类且匹配搜索的项
+        const catItems = prompts.filter(p => (p.category === catName || (!p.category && catName === "其他")) && p.title.toLowerCase().includes(filter));
         
-        if (filter === "") {
-            card.draggable = true;
-            card.ondragstart = (e) => {
-                draggedItemIndex = realIndex;
-                e.target.classList.add('dragging');
-            };
-            card.ondragend = (e) => e.target.classList.remove('dragging');
-            card.ondrop = () => handleDrop(realIndex);
-        }
+        if (catItems.length > 0) {
+            hasResults = true;
+            
+            // 创建分类区块
+            const section = document.createElement('div');
+            section.innerHTML = `
+                <div class="category-header">
+                    <span class="text-[#ff9900] font-black tracking-widest text-sm uppercase">${catName}</span>
+                    <span class="text-zinc-700 text-xs font-bold">${catItems.length} ITEMS</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 list-grid" data-category="${catName}"></div>
+            `;
+            
+            const grid = section.querySelector('.list-grid');
+            catItems.forEach(p => {
+                const realIndex = prompts.indexOf(p);
+                const card = document.createElement('div');
+                card.className = 'title-card bg-[#1b1b1b] p-6 rounded-2xl border border-zinc-800 hover:border-[#ff9900] shadow-lg flex justify-between items-center group';
+                
+                if (filter === "") {
+                    card.draggable = true;
+                    card.ondragstart = (e) => { draggedItemIndex = realIndex; e.target.classList.add('dragging'); };
+                    card.ondragend = (e) => e.target.classList.remove('dragging');
+                    card.ondrop = () => handleDrop(realIndex);
+                    card.ondragover = e => e.preventDefault();
+                }
 
-        card.innerHTML = `
-            <div class="flex-grow cursor-pointer" onclick="openViewModal(${realIndex})">
-                <h3 class="font-bold text-white group-hover:text-[#ff9900] text-lg transition-colors truncate pr-4">${p.title}</h3>
-                <p class="text-zinc-600 text-xs mt-1 font-bold italic underline">点击查看详情</p>
-            </div>
-            <div class="text-zinc-700 group-hover:text-[#ff9900] flex flex-col space-y-1">
-                <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-                    <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
-                    <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
-                    <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
-                </svg>
-            </div>
-        `;
-        elements.listContainer.appendChild(card);
+                card.innerHTML = `
+                    <div class="flex-grow cursor-pointer" onclick="openViewModal(${realIndex})">
+                        <h3 class="font-bold text-white group-hover:text-[#ph-orange] text-lg transition-colors truncate pr-4">${p.title}</h3>
+                        <p class="text-zinc-600 text-xs mt-1">点击查看</p>
+                    </div>
+                    <div class="text-zinc-800 group-hover:text-[#ff9900]">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/><circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/></svg>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            elements.listContainer.appendChild(section);
+        }
     });
+
+    elements.emptyState.classList.toggle('hidden', hasResults);
 }
 
 function handleDrop(targetIndex) {
@@ -99,13 +97,15 @@ function handleDrop(targetIndex) {
 }
 
 // ===========================
-// 弹窗逻辑
+// 弹窗管理
 // ===========================
 function openCreateModal() {
     currentModalIndex = -1;
     elements.modalTitle.innerText = "新建 PROMPT";
+    elements.modalCategoryBadge.classList.add('hidden');
     elements.titleInput.value = "";
     elements.contentInput.value = "";
+    elements.categoryInput.value = "工作流";
     showModalMode('edit');
     showModal(true);
 }
@@ -115,6 +115,8 @@ function openViewModal(index) {
     const p = prompts[index];
     elements.modalTitle.innerText = p.title;
     elements.modalContentText.innerText = p.content;
+    elements.modalCategoryBadge.innerText = p.category || "其他";
+    elements.modalCategoryBadge.classList.remove('hidden');
     showModalMode('view');
     showModal(true);
 }
@@ -131,6 +133,7 @@ function switchToEditMode() {
     const p = prompts[currentModalIndex];
     elements.titleInput.value = p.title;
     elements.contentInput.value = p.content;
+    elements.categoryInput.value = p.category || "其他";
     showModalMode('edit');
     elements.modalTitle.innerText = "修改";
 }
@@ -142,19 +145,30 @@ function showModal(show) {
 
 function closeModal() { showModal(false); }
 
+// ===========================
+// 数据操作 (CRUD)：改为 push 到末尾
+// ===========================
 function handleSave() {
     const title = elements.titleInput.value.trim();
     const content = elements.contentInput.value.trim();
-    if (!title || !content) { alert('内容不能为空'); return; }
+    const category = elements.categoryInput.value;
+    if (!title || !content) return;
 
-    if (currentModalIndex === -1) prompts.unshift({ title, content });
-    else prompts[currentModalIndex] = { title, content };
+    const data = { title, content, category };
+    
+    if (currentModalIndex === -1) {
+        // 新增：加在数组最后（即该分类的最后）
+        prompts.push(data);
+    } else {
+        // 修改：替换原有位置
+        prompts[currentModalIndex] = data;
+    }
     
     render(); closeModal(); pushData();
 }
 
 function deleteFromModal() {
-    if (confirm('确认彻底删除吗？')) {
+    if (confirm('确认删除？')) {
         prompts.splice(currentModalIndex, 1);
         render(); closeModal(); pushData();
     }
@@ -171,93 +185,46 @@ function copyFromModal(btn) {
 }
 
 // ===========================
-// 同步逻辑 (修复 401 和 undefined 问题)
+// 云同步逻辑
 // ===========================
-function toggleConfigPanel() { document.getElementById('config-section').classList.toggle('hidden'); }
-
 function saveConfig() {
-    const token = document.getElementById('gh-token').value.trim();
-    const id = document.getElementById('gist-id').value.trim();
-    if (!token.startsWith('ghp_')) { alert('Token 格式错误，必须以 ghp_ 开头'); return; }
-    
-    // 强制清理 ID 中的潜在错误字符串
-    const cleanId = (id === 'undefined' || id === 'null') ? '' : id;
-    
-    config = { token, gistId: cleanId };
+    config = { token: document.getElementById('gh-token').value.trim(), gistId: document.getElementById('gist-id').value.trim() };
     localStorage.setItem('gist_config', JSON.stringify(config));
-    fetchData(); 
-    toggleConfigPanel();
+    fetchData(); document.getElementById('config-section').classList.add('hidden');
 }
 
 async function fetchData() {
-    // 如果没有 ID，说明是新用户，不执行下载
-    if (!config.token || !config.gistId || config.gistId === 'undefined') {
-        updateStatus('等待添加第一个 Prompt...', false);
-        return;
-    }
-
-    updateStatus('正在同步云端...', true);
+    if (!config.token || !config.gistId) return;
+    updateStatus('同步中...', true);
     try {
-        const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
-            headers: { 'Authorization': `token ${config.token}` }
-        });
-        
-        if (res.status === 401) {
-            updateStatus('❌ Token 无效 (401)，请检查设置', false);
-            return;
-        }
-        if (!res.ok) throw new Error();
-
+        const res = await fetch(`https://api.github.com/gists/${config.gistId}`, { headers: { 'Authorization': `token ${config.token}` } });
         const data = await res.json();
-        if (data.files && data.files['prompts.json']) {
-            prompts = JSON.parse(data.files['prompts.json'].content);
-            render(); 
-            updateStatus('✅ 同步完成');
-        }
-    } catch (e) { 
-        updateStatus('⚠️ 同步失败，请检查网络或 ID', false); 
-    }
+        prompts = JSON.parse(data.files['prompts.json'].content);
+        render(); updateStatus('同步完成');
+    } catch (e) { updateStatus('同步失败', false); }
 }
 
 async function pushData() {
     if (!config.token) return;
-    updateStatus('正在保存至云端...', true);
-    
-    // 如果没有 ID，则创建 (POST)，如果有则更新 (PATCH)
-    const hasValidId = config.gistId && config.gistId !== 'undefined';
-    const method = hasValidId ? 'PATCH' : 'POST';
-    const url = hasValidId ? `https://api.github.com/gists/${config.gistId}` : `https://api.github.com/gists`;
-    
+    updateStatus('正在云端同步...', true);
+    const method = config.gistId ? 'PATCH' : 'POST';
+    const url = config.gistId ? `https://api.github.com/gists/${config.gistId}` : `https://api.github.com/gists`;
     try {
         const res = await fetch(url, {
             method: method,
-            headers: { 'Authorization': `token ${config.token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                description: "Prompt Hub Sync",
-                files: { "prompts.json": { content: JSON.stringify(prompts, null, 2) } }
-            })
+            headers: { 'Authorization': `token ${config.token}` },
+            body: JSON.stringify({ files: { "prompts.json": { content: JSON.stringify(prompts, null, 2) } } })
         });
-
-        if (res.status === 401) {
-            updateStatus('❌ 权限错误，请检查 Token', false);
-            return;
-        }
-
         const data = await res.json();
-        if (!hasValidId) {
-            config.gistId = data.id;
-            localStorage.setItem('gist_config', JSON.stringify(config));
-        }
-        updateStatus('✅ 云端已同步');
-    } catch (e) { 
-        updateStatus('❌ 上传失败', false); 
-    }
+        if (!config.gistId) { config.gistId = data.id; localStorage.setItem('gist_config', JSON.stringify(config)); }
+        updateStatus('云端已更新');
+    } catch (e) { updateStatus('上传失败'); }
 }
 
 function updateStatus(msg, loading = false) {
     elements.statusBar.classList.remove('hidden');
     elements.statusText.innerText = msg;
-    if (!loading) setTimeout(() => elements.statusBar.classList.add('hidden'), 3000);
+    if (!loading) setTimeout(() => elements.statusBar.classList.add('hidden'), 2000);
 }
 
-function resetConfig() { if(confirm('确定要清除所有本地配置并重置吗？')) { localStorage.clear(); location.reload(); } }
+function resetConfig() { if(confirm('重置？')) { localStorage.clear(); location.reload(); } }
