@@ -3,129 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prompt Hub</title>
+    <title>Prompt Hub | Your Personal AI Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="font-sans min-h-screen">
+<body class="font-sans min-h-screen bg-black text-white">
 
-    <div class="container mx-auto px-4 py-6 max-w-4xl relative z-10">
-        <header class="flex justify-between items-center mb-8 p-4 rounded-xl bg-ph-dark border border-zinc-800">
-            <div class="flex items-center select-none">
-                <span class="text-2xl font-bold text-white tracking-tighter">Prompt</span>
-                <span class="text-2xl font-bold text-black bg-ph-orange px-2 ml-1 rounded-md tracking-tighter">Hub</span>
+    <div class="container mx-auto px-4 py-6 max-w-4xl relative z-10 min-h-screen flex flex-col">
+        <header class="flex justify-between items-center mb-6 p-4 rounded-xl bg-[#1b1b1b] border border-zinc-800 shadow-xl flex-shrink-0">
+            <div class="flex items-center select-none cursor-pointer" onclick="location.reload()">
+                <span class="text-2xl font-black tracking-tighter">Prompt</span>
+                <span class="text-2xl font-black text-black bg-[#ff9900] px-2 ml-1 rounded-md tracking-tighter">Hub</span>
             </div>
-            <button id="toggle-config-btn" class="flex items-center space-x-1 text-sm font-bold text-zinc-400 hover:text-ph-orange transition-colors px-3 py-2 rounded-lg hover:bg-zinc-800/50">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                </svg>
-                <span>设置</span>
+            <button id="toggle-config-btn" class="text-sm font-bold text-zinc-500 hover:text-[#ff9900] transition-colors">
+                ⚙️ 设置同步
             </button>
         </header>
 
-        <section id="config-section" class="hidden mb-8 p-6 bg-ph-dark border border-zinc-800 rounded-2xl shadow-xl animate-fade-in relative">
-             <div class="flex justify-between items-center mb-6">
-                <h2 class="font-bold text-white text-lg flex items-center">☁️ 云同步配置</h2>
-                <button onclick="toggleConfigPanel()" class="text-zinc-500 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
+        <section id="config-section" class="hidden mb-6 p-6 bg-[#1b1b1b] border border-zinc-800 rounded-2xl shadow-2xl animate-fade-in flex-shrink-0">
+            <h2 class="font-bold text-white text-lg mb-4">☁️ GitHub Gist 配置</h2>
             <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-ph-orange mb-2 uppercase tracking-wider">GitHub Token (必填)</label>
-                    <input type="password" id="gh-token" placeholder="ghp_ 开头的完整字符串" 
-                        class="w-full p-3 text-sm bg-black border-2 border-zinc-700 rounded-xl focus:border-ph-orange focus:ring-1 focus:ring-ph-orange outline-none transition-all font-mono text-white placeholder-zinc-600">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-ph-orange mb-2 uppercase tracking-wider">Gist ID</label>
-                    <input type="text" id="gist-id" placeholder="新设备粘贴已有 ID，首次使用请留空" 
-                        class="w-full p-3 text-sm bg-black border-2 border-zinc-700 rounded-xl focus:border-ph-orange focus:ring-1 focus:ring-ph-orange outline-none transition-all font-mono text-white placeholder-zinc-600">
-                </div>
-                <div class="flex space-x-3 pt-2">
-                    <button onclick="saveConfig()" class="flex-1 bg-ph-orange hover:bg-orange-600 text-black px-4 py-3 rounded-xl text-sm font-bold transition-transform active:scale-95">保存并同步</button>
-                    <button onclick="resetConfig()" class="px-4 py-3 rounded-xl text-sm font-bold text-zinc-400 hover:text-red-500 hover:bg-zinc-900/50 border border-zinc-800 transition-colors">清空重置</button>
+                <input type="password" id="gh-token" placeholder="GitHub Token (ghp_...)" 
+                    class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
+                <input type="text" id="gist-id" placeholder="Gist ID (首次使用请留空)" 
+                    class="w-full p-3 bg-black border-2 border-zinc-700 rounded-xl text-white outline-none focus:border-[#ff9900]">
+                <div class="flex space-x-3">
+                    <button onclick="saveConfig()" class="flex-1 bg-[#ff9900] text-black py-3 rounded-xl font-bold hover:bg-orange-500 transition-all">保存配置</button>
+                    <button onclick="resetConfig()" class="px-4 py-3 text-zinc-400 border border-zinc-800 rounded-xl hover:text-red-500">重置</button>
                 </div>
             </div>
         </section>
 
-        <div id="status-bar" class="mb-6 p-3 rounded-xl text-sm flex items-center justify-center bg-zinc-900 border border-zinc-800 text-zinc-400 transition-all duration-300 hidden">
-            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-ph-orange hidden" id="loading-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+        <div id="status-bar" class="mb-6 p-3 rounded-xl text-sm flex items-center justify-center bg-zinc-900 border border-zinc-800 text-zinc-400 hidden flex-shrink-0">
             <span id="status-text">准备就绪</span>
         </div>
 
-        <main>
-            <button onclick="openCreateModal()" class="w-full mb-8 bg-ph-orange hover:bg-orange-600 text-black font-bold text-lg py-4 rounded-2xl shadow-lg hover:shadow-orange-500/20 transition-all active:scale-95 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                新建 Prompt
-            </button>
-
-            <div id="list" class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+        <main class="flex-grow">
+            <div class="flex flex-col md:flex-row gap-4 mb-8">
+                <div class="relative flex-grow">
+                    <input type="text" id="search-bar" oninput="handleSearch()" placeholder="搜索 Prompt 标题关键词..." 
+                        class="w-full p-4 bg-[#1b1b1b] border-2 border-zinc-800 rounded-2xl text-white outline-none focus:border-[#ff9900] transition-all pl-12">
+                    <span class="absolute left-4 top-4 opacity-30 text-xl">🔍</span>
                 </div>
-            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-zinc-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                </svg>
-                <p class="text-lg">还没有 Prompt，来一发？</p>
-            </div>
-        </main>
-    </div>
-
-    <div id="modal-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden transition-opacity items-center justify-center p-4 flex">
-        <div id="modal-container" class="bg-ph-dark border border-zinc-800 w-full max-w-2xl rounded-2xl shadow-2xl relative animate-scale-in overflow-hidden max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center p-5 border-b border-zinc-800">
-                <h3 id="modal-title" class="text-xl font-bold text-white truncate mr-4">标题</h3>
-                <button onclick="closeModal()" class="text-zinc-500 hover:text-ph-orange transition-colors p-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                <button onclick="openCreateModal()" class="bg-[#ff9900] hover:bg-orange-500 text-black font-black text-lg px-8 py-4 rounded-2xl shadow-lg transition-all active:scale-95 whitespace-nowrap">
+                    + 新建 PROMPT
                 </button>
             </div>
 
-            <div class="p-5 overflow-y-auto custom-scrollbar flex-grow">
-                <div id="view-mode-content" class="hidden">
-                    <pre id="modal-content-text" class="text-zinc-300 whitespace-pre-wrap font-sans text-base leading-relaxed"></pre>
+            <div id="list" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 </div>
+            
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 text-zinc-600">
+                <p class="text-lg font-bold">没有发现相关的 Prompt</p>
+            </div>
+        </main>
 
-                <div id="edit-mode-form" class="hidden space-y-4">
+        <footer class="mt-8 py-6 text-center text-zinc-600 text-sm font-bold select-none flex-shrink-0">
+            <span>© Khee</span>
+            <span class="text-[#ff9900] mx-1 inline-block heart-beat">❤️</span>
+        </footer>
+
+    </div>
+
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div id="modal-container" class="bg-[#1b1b1b] border border-zinc-800 w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] animate-scale-in overflow-hidden">
+            <div class="flex justify-between items-center p-6 border-b border-zinc-800 bg-zinc-900/50">
+                <h3 id="modal-title" class="text-xl font-black text-[#ff9900] truncate mr-4">详情</h3>
+                <button onclick="closeModal()" class="text-zinc-500 hover:text-white text-2xl font-bold">✕</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-grow text-zinc-200">
+                <div id="view-mode-content" class="hidden">
+                    <pre id="modal-content-text" class="whitespace-pre-wrap font-sans leading-relaxed text-lg bg-black/30 p-4 rounded-xl border border-zinc-800/50"></pre>
+                </div>
+                <div id="edit-mode-form" class="hidden space-y-5">
                     <input type="hidden" id="edit-index" value="-1">
-                    <div>
-                        <input type="text" id="p-title" placeholder="输入标题..." 
-                            class="w-full p-4 text-lg font-bold bg-black border-2 border-zinc-800 rounded-xl focus:border-ph-orange focus:ring-1 focus:ring-ph-orange outline-none transition-all text-white placeholder-zinc-600">
-                    </div>
-                    <div>
-                        <textarea id="p-content" rows="10" placeholder="输入详细 Prompt 内容..." 
-                            class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl focus:border-ph-orange focus:ring-1 focus:ring-ph-orange outline-none transition-all resize-none text-zinc-300 leading-relaxed placeholder-zinc-600 custom-scrollbar"></textarea>
-                    </div>
+                    <input type="text" id="p-title" placeholder="Prompt 标题..." 
+                        class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] text-xl font-bold">
+                    <textarea id="p-content" rows="12" placeholder="在此粘贴你的 AI Prompt 指令内容..." 
+                        class="w-full p-4 bg-black border-2 border-zinc-800 rounded-xl text-white outline-none focus:border-[#ff9900] resize-none custom-scrollbar leading-relaxed"></textarea>
                 </div>
             </div>
 
-             <div class="p-5 border-t border-zinc-800 bg-zinc-900/50 flex justify-end space-x-3">
+            <div id="modal-footer" class="p-6 border-t border-zinc-800 bg-zinc-900/80 flex space-x-3">
                 <div id="view-actions" class="hidden flex space-x-3 w-full">
-                     <button onclick="copyFromModal(this)" class="flex-1 flex items-center justify-center bg-ph-orange hover:bg-orange-600 text-black px-4 py-3 rounded-xl font-bold transition-all active:scale-95">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
-                        <span>一键复制</span>
-                    </button>
-                    <button onclick="switchToEditMode()" class="px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl font-bold transition-colors flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                        修改
-                    </button>
-                    <button onclick="deleteFromModal()" class="px-4 py-3 bg-zinc-800 hover:bg-red-900/30 text-red-500 rounded-xl font-bold transition-colors flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        删除
-                    </button>
+                    <button onclick="copyFromModal(this)" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg hover:bg-orange-500 transition-all">一键复制内容</button>
+                    <button onclick="switchToEditMode()" class="px-6 py-4 bg-zinc-800 text-white rounded-xl font-bold hover:bg-zinc-700 transition-all">修改</button>
+                    <button onclick="deleteFromModal()" class="px-6 py-4 bg-zinc-900 text-red-600 rounded-xl font-bold hover:bg-red-950 transition-all">删除</button>
                 </div>
                 <div id="edit-actions" class="hidden flex space-x-3 w-full">
-                    <button onclick="handleSave()" id="btn-save" class="flex-1 bg-ph-orange hover:bg-orange-600 text-black px-4 py-3 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center">
-                        保存并上传
-                    </button>
-                    <button onclick="closeModal()" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl font-bold transition-colors">
-                        取消
-                    </button>
+                    <button onclick="handleSave()" id="btn-save" class="flex-grow bg-[#ff9900] text-black py-4 rounded-xl font-black text-lg hover:bg-orange-500">确认保存</button>
+                    <button onclick="closeModal()" class="px-8 py-4 bg-zinc-800 text-white rounded-xl font-bold hover:bg-zinc-700">取消</button>
                 </div>
             </div>
         </div>
