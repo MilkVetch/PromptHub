@@ -22,11 +22,18 @@ const elements = {
 };
 
 // ===========================
-// 初始化与渲染
+// 初始化与自动纠错
 // ===========================
 window.onload = () => {
+    // 自动纠错：如果检测到错误的 "undefined" 字符串，强行清空
+    if (config.gistId === 'undefined' || config.gistId === 'null') {
+        config.gistId = '';
+        localStorage.setItem('gist_config', JSON.stringify(config));
+    }
+
     if (!config.token) {
         document.getElementById('config-section').classList.remove('hidden');
+        updateStatus('请点击设置按钮配置 Token', false);
     } else {
         fetchData();
     }
@@ -37,6 +44,9 @@ function handleSearch() {
     render(elements.searchBar.value.toLowerCase());
 }
 
+// ===========================
+// 渲染逻辑
+// ===========================
 function render(filter = "") {
     elements.listContainer.innerHTML = '';
     const filteredPrompts = prompts.filter(p => p.title.toLowerCase().includes(filter));
@@ -50,9 +60,8 @@ function render(filter = "") {
     filteredPrompts.forEach((p, i) => {
         const realIndex = prompts.indexOf(p);
         const card = document.createElement('div');
-        card.className = 'title-card bg-[#1b1b1b] p-6 rounded-2xl border border-zinc-800 hover:border-[#ff9900] shadow-lg flex justify-between items-center group';
+        card.className = 'title-card bg-[#1b1b1b] p-6 rounded-2xl border border-zinc-800 hover:border-[#ff9900] shadow-lg flex justify-between items-center group animate-fade-in';
         
-        // 搜索状态下禁用拖拽
         if (filter === "") {
             card.draggable = true;
             card.ondragstart = (e) => {
@@ -66,10 +75,10 @@ function render(filter = "") {
         card.innerHTML = `
             <div class="flex-grow cursor-pointer" onclick="openViewModal(${realIndex})">
                 <h3 class="font-bold text-white group-hover:text-[#ff9900] text-lg transition-colors truncate pr-4">${p.title}</h3>
-                <p class="text-zinc-600 text-xs mt-1">查看内容</p>
+                <p class="text-zinc-600 text-xs mt-1 font-bold italic underline">点击查看详情</p>
             </div>
             <div class="text-zinc-700 group-hover:text-[#ff9900] flex flex-col space-y-1">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
                     <circle cx="5" cy="4" r="1.5"/><circle cx="11" cy="4" r="1.5"/>
                     <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
                     <circle cx="5" cy="12" r="1.5"/><circle cx="11" cy="12" r="1.5"/>
@@ -90,7 +99,7 @@ function handleDrop(targetIndex) {
 }
 
 // ===========================
-// 弹窗与交互逻辑
+// 弹窗逻辑
 // ===========================
 function openCreateModal() {
     currentModalIndex = -1;
@@ -136,7 +145,7 @@ function closeModal() { showModal(false); }
 function handleSave() {
     const title = elements.titleInput.value.trim();
     const content = elements.contentInput.value.trim();
-    if (!title || !content) return;
+    if (!title || !content) { alert('内容不能为空'); return; }
 
     if (currentModalIndex === -1) prompts.unshift({ title, content });
     else prompts[currentModalIndex] = { title, content };
@@ -145,7 +154,7 @@ function handleSave() {
 }
 
 function deleteFromModal() {
-    if (confirm('确认删除？')) {
+    if (confirm('确认彻底删除吗？')) {
         prompts.splice(currentModalIndex, 1);
         render(); closeModal(); pushData();
     }
@@ -153,7 +162,7 @@ function deleteFromModal() {
 
 function copyFromModal(btn) {
     navigator.clipboard.writeText(elements.modalContentText.innerText);
-    const origin = btn.innerText; btn.innerText = "已复制！";
+    const origin = btn.innerText; btn.innerText = "复制成功！";
     btn.classList.replace('bg-[#ff9900]', 'bg-green-600');
     setTimeout(() => {
         btn.innerText = origin;
@@ -162,59 +171,93 @@ function copyFromModal(btn) {
 }
 
 // ===========================
-// 同步逻辑 (GitHub Gist)
+// 同步逻辑 (修复 401 和 undefined 问题)
 // ===========================
 function toggleConfigPanel() { document.getElementById('config-section').classList.toggle('hidden'); }
 
 function saveConfig() {
     const token = document.getElementById('gh-token').value.trim();
     const id = document.getElementById('gist-id').value.trim();
-    if (!token.startsWith('ghp_')) { alert('Token 格式错误'); return; }
-    config = { token, gistId: id };
+    if (!token.startsWith('ghp_')) { alert('Token 格式错误，必须以 ghp_ 开头'); return; }
+    
+    // 强制清理 ID 中的潜在错误字符串
+    const cleanId = (id === 'undefined' || id === 'null') ? '' : id;
+    
+    config = { token, gistId: cleanId };
     localStorage.setItem('gist_config', JSON.stringify(config));
-    fetchData(); toggleConfigPanel();
+    fetchData(); 
+    toggleConfigPanel();
 }
 
 async function fetchData() {
-    if (!config.token || !config.gistId) return;
-    updateStatus('同步中...', true);
+    // 如果没有 ID，说明是新用户，不执行下载
+    if (!config.token || !config.gistId || config.gistId === 'undefined') {
+        updateStatus('等待添加第一个 Prompt...', false);
+        return;
+    }
+
+    updateStatus('正在同步云端...', true);
     try {
         const res = await fetch(`https://api.github.com/gists/${config.gistId}`, {
             headers: { 'Authorization': `token ${config.token}` }
         });
+        
+        if (res.status === 401) {
+            updateStatus('❌ Token 无效 (401)，请检查设置', false);
+            return;
+        }
+        if (!res.ok) throw new Error();
+
         const data = await res.json();
-        prompts = JSON.parse(data.files['prompts.json'].content);
-        render(); updateStatus('同步完成');
-    } catch (e) { updateStatus('同步失败', false); }
+        if (data.files && data.files['prompts.json']) {
+            prompts = JSON.parse(data.files['prompts.json'].content);
+            render(); 
+            updateStatus('✅ 同步完成');
+        }
+    } catch (e) { 
+        updateStatus('⚠️ 同步失败，请检查网络或 ID', false); 
+    }
 }
 
 async function pushData() {
     if (!config.token) return;
-    updateStatus('正在云端同步...', true);
-    const method = config.gistId ? 'PATCH' : 'POST';
-    const url = config.gistId ? `https://api.github.com/gists/${config.gistId}` : `https://api.github.com/gists`;
+    updateStatus('正在保存至云端...', true);
+    
+    // 如果没有 ID，则创建 (POST)，如果有则更新 (PATCH)
+    const hasValidId = config.gistId && config.gistId !== 'undefined';
+    const method = hasValidId ? 'PATCH' : 'POST';
+    const url = hasValidId ? `https://api.github.com/gists/${config.gistId}` : `https://api.github.com/gists`;
     
     try {
         const res = await fetch(url, {
             method: method,
-            headers: { 'Authorization': `token ${config.token}` },
+            headers: { 'Authorization': `token ${config.token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                description: "Prompt Hub Sync",
                 files: { "prompts.json": { content: JSON.stringify(prompts, null, 2) } }
             })
         });
+
+        if (res.status === 401) {
+            updateStatus('❌ 权限错误，请检查 Token', false);
+            return;
+        }
+
         const data = await res.json();
-        if (!config.gistId) {
+        if (!hasValidId) {
             config.gistId = data.id;
             localStorage.setItem('gist_config', JSON.stringify(config));
         }
-        updateStatus('云端已更新');
-    } catch (e) { updateStatus('上传失败'); }
+        updateStatus('✅ 云端已同步');
+    } catch (e) { 
+        updateStatus('❌ 上传失败', false); 
+    }
 }
 
 function updateStatus(msg, loading = false) {
     elements.statusBar.classList.remove('hidden');
     elements.statusText.innerText = msg;
-    if (!loading) setTimeout(() => elements.statusBar.classList.add('hidden'), 2000);
+    if (!loading) setTimeout(() => elements.statusBar.classList.add('hidden'), 3000);
 }
 
-function resetConfig() { if(confirm('重置？')) { localStorage.clear(); location.reload(); } }
+function resetConfig() { if(confirm('确定要清除所有本地配置并重置吗？')) { localStorage.clear(); location.reload(); } }
