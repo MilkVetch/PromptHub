@@ -4,54 +4,111 @@ let currentModalIndex = -1;
 let draggedItemIndex = null;
 let touchTimer = null;
 
-const elements = {
-    listContainer: document.getElementById('list-container'),
-    searchBar: document.getElementById('search-bar'),
-    configSection: document.getElementById('config-section'),
-    modalBackdrop: document.getElementById('modal-backdrop'),
-    statusBar: document.getElementById('status-bar')
+const els = {
+    list: document.getElementById('list-container'),
+    search: document.getElementById('search-bar'),
+    config: document.getElementById('config-section'),
+    modal: document.getElementById('modal-backdrop'),
+    dialog: document.getElementById('dialog-backdrop'),
+    status: document.getElementById('status-bar')
 };
 
 window.onload = () => {
     document.getElementById('gh-token').value = config.token || '';
     document.getElementById('gist-id').value = config.gistId || '';
     if (config.token && config.gistId) fetchData();
-    else elements.configSection.classList.remove('hidden');
+    else els.config.classList.remove('hidden');
 };
 
-// 1. 同步设置面板交互：点击空白处关闭
+// 交互逻辑：点击空白关闭面板/对话框
 document.addEventListener('click', (e) => {
-    const isClickInside = elements.configSection.contains(e.target);
-    const isToggleButton = document.getElementById('config-toggle-btn').contains(e.target);
-    if (!isClickInside && !isToggleButton && !elements.configSection.classList.contains('hidden')) {
-        elements.configSection.classList.add('hidden');
+    if (!els.config.contains(e.target) && !document.getElementById('config-toggle-btn').contains(e.target)) {
+        els.config.classList.add('hidden');
     }
 });
 
-function toggleConfig(e) {
-    e.stopPropagation();
-    elements.configSection.classList.toggle('hidden');
+function toggleConfig(e) { e.stopPropagation(); els.config.classList.toggle('hidden'); }
+
+// 通用对话框管理 (替代丑陋的系统弹窗)
+function showDialog({ title, body, showInput, confirmText, onConfirm }) {
+    document.getElementById('dialog-header').innerText = title;
+    document.getElementById('dialog-body').innerHTML = body;
+    const inputWrapper = document.getElementById('dialog-input-wrapper');
+    const inputField = document.getElementById('dialog-input');
+    
+    if (showInput) {
+        inputWrapper.classList.remove('hidden');
+        inputField.value = showInput.val || '';
+    } else {
+        inputWrapper.classList.add('hidden');
+    }
+
+    const confirmBtn = document.getElementById('dialog-confirm-btn');
+    confirmBtn.innerText = confirmText || '确定';
+    confirmBtn.onclick = () => {
+        const val = showInput ? inputField.value : null;
+        onConfirm(val);
+        closeDialog();
+    };
+    els.dialog.classList.remove('hidden');
 }
 
-// 2. 导出配置功能
-function exportConfig() {
-    const configData = JSON.stringify(config, null, 2);
-    const blob = new Blob([configData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `prompthub_config_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+function closeDialog() { els.dialog.classList.add('hidden'); }
+
+// 业务 UI 逻辑
+function showContactUI() {
+    showDialog({
+        title: "关于 & 联系",
+        body: "联系邮箱: <span class='text-white'>Khee.huang@hotmail.com</span><br><br>提示: 如果喜欢这个工具，可以联系我进行打赏以支持后续开发。感谢支持！",
+        confirmText: "好的",
+        onConfirm: () => {}
+    });
 }
 
-// 3. 版权信息弹窗
-function showContactModal() {
-    alert("联系方式: Khee.huang@hotmail.com\n\n提示: 如果喜欢这个工具，可以联系我进行打赏以支持后续开发。感谢支持！");
+function confirmDeleteUI() {
+    showDialog({
+        title: "确认删除",
+        body: "确定要永久移除这个 Prompt 吗？此操作无法撤销。",
+        confirmText: "确认删除",
+        onConfirm: () => {
+            prompts.splice(currentModalIndex, 1);
+            render(); closeModal(); pushData();
+        }
+    });
+}
+
+function renameCategory(oldName) {
+    showDialog({
+        title: "重命名分类",
+        body: `正在修改分类: <span class='text-white'>${oldName}</span>`,
+        showInput: { val: oldName },
+        confirmText: "保存修改",
+        onConfirm: (newName) => {
+            if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
+                prompts.forEach(p => { if ((p.category || "未分类") === oldName) p.category = newName.trim(); });
+                render(); pushData();
+            }
+        }
+    });
+}
+
+// 核心功能：打开新建弹窗 (修复残留 BUG)
+function openCreateModal() {
+    currentModalIndex = -1;
+    // 强制清除所有输入值
+    document.getElementById('p-title').value = "";
+    document.getElementById('p-content').value = "";
+    document.getElementById('p-category').value = "";
+    
+    document.getElementById('modal-title').innerText = "新建 PROMPT";
+    document.getElementById('modal-category-badge').innerText = "NEW";
+    
+    showModalMode('edit');
+    showModal(true);
 }
 
 function render(filter = "") {
-    elements.listContainer.innerHTML = '';
+    els.list.innerHTML = '';
     const filtered = prompts.filter(p => 
         p.title.toLowerCase().includes(filter) || p.content.toLowerCase().includes(filter)
     );
@@ -66,7 +123,7 @@ function render(filter = "") {
         hasVisible = true;
 
         const section = document.createElement('div');
-        section.className = "mb-12 animate-scale-in";
+        section.className = "mb-12 animate-modal";
         section.innerHTML = `
             <div class="category-header">
                 <span class="text-[#ff9900] font-black tracking-widest text-sm uppercase">${cat}</span>
@@ -80,7 +137,7 @@ function render(filter = "") {
         catItems.forEach(p => {
             const realIdx = prompts.indexOf(p);
             const card = document.createElement('div');
-            card.className = 'title-card bg-[#111] p-7 rounded-[1.5rem] border border-zinc-900 hover:border-[#ff9900]/50 shadow-lg flex flex-col justify-between group';
+            card.className = 'title-card bg-[#111] p-7 rounded-[1.5rem] border border-zinc-900 hover:border-[#ff9900]/40 shadow-lg flex flex-col justify-between group';
             
             if (filter === "") {
                 card.draggable = true;
@@ -101,21 +158,12 @@ function render(filter = "") {
             `;
             grid.appendChild(card);
         });
-        elements.listContainer.appendChild(section);
+        els.list.appendChild(section);
     });
     document.getElementById('empty-state').classList.toggle('hidden', hasVisible);
 }
 
-// 重命名分类 (中文按钮触发)
-function renameCategory(oldName) {
-    const newName = prompt(`将分类 [${oldName}] 修改为:`, oldName);
-    if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
-        prompts.forEach(p => { if ((p.category || "未分类") === oldName) p.category = newName.trim(); });
-        render(); pushData();
-    }
-}
-
-// 拖拽插入逻辑 (PC + Mobile)
+// 拖拽逻辑保持 (添加了 2D 插入)
 function bindDragEvents(el, index) {
     el.ondragstart = (e) => { draggedItemIndex = index; setTimeout(() => el.classList.add('dragging'), 0); };
     el.ondragend = () => { el.classList.remove('dragging'); clearDropIndicators(); };
@@ -146,7 +194,6 @@ async function handleMove(fromIdx, toIdx, isBefore) {
     const source = prompts[fromIdx];
     const target = prompts[toIdx];
     if ((source.category || "未分类") !== (target.category || "未分类")) {
-        if (!confirm(`移动到新分类 [${target.category || "未分类"}]？`)) return;
         source.category = target.category || "未分类";
     }
     prompts.splice(fromIdx, 1);
@@ -155,7 +202,6 @@ async function handleMove(fromIdx, toIdx, isBefore) {
     render(); await pushData();
 }
 
-// 弹窗与同步基础逻辑 (保持不变)
 function openViewModal(index) {
     currentModalIndex = index;
     const p = prompts[index];
@@ -174,18 +220,17 @@ function showModalMode(mode) {
     document.getElementById('edit-actions').classList.toggle('hidden', isView);
 }
 
-function showModal(show) { elements.modalBackdrop.classList.toggle('hidden', !show); document.body.style.overflow = show ? 'hidden' : ''; }
+function showModal(show) { els.modal.classList.toggle('hidden', !show); document.body.style.overflow = show ? 'hidden' : ''; }
 function closeModal() { showModal(false); }
-function openCreateModal() {
-    currentModalIndex = -1;
-    document.getElementById('p-title').value = ""; document.getElementById('p-content').value = ""; document.getElementById('p-category').value = "";
-    showModalMode('edit'); showModal(true);
-}
+
 function switchToEditMode() {
     const p = prompts[currentModalIndex];
-    document.getElementById('p-title').value = p.title; document.getElementById('p-content').value = p.content; document.getElementById('p-category').value = p.category || "";
+    document.getElementById('p-title').value = p.title;
+    document.getElementById('p-content').value = p.content;
+    document.getElementById('p-category').value = p.category || "";
     showModalMode('edit');
 }
+
 async function handleSave() {
     const title = document.getElementById('p-title').value.trim();
     const content = document.getElementById('p-content').value.trim();
@@ -195,17 +240,25 @@ async function handleSave() {
     else prompts[currentModalIndex] = { title, content, category };
     render(); closeModal(); await pushData();
 }
-function deleteFromModal() { if (confirm('确认删除？')) { prompts.splice(currentModalIndex, 1); render(); closeModal(); pushData(); } }
+
 function copyFromModal(btn) { navigator.clipboard.writeText(prompts[currentModalIndex].content); const old = btn.innerText; btn.innerText = "已复制 ✅"; setTimeout(() => btn.innerText = old, 1500); }
-function handleSearch() { render(elements.searchBar.value.toLowerCase()); }
+function handleSearch() { render(els.search.value.toLowerCase()); }
+
 async function saveConfig() {
     config = { token: document.getElementById('gh-token').value.trim(), gistId: document.getElementById('gist-id').value.trim() };
     localStorage.setItem('gist_config', JSON.stringify(config));
-    await fetchData(); elements.configSection.classList.add('hidden');
+    await fetchData(); els.config.classList.add('hidden');
 }
+
+async function exportConfig() {
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `prompthub_config.json`; a.click();
+}
+
 async function fetchData() {
     if (!config.token || !config.gistId) return;
-    updateStatus('正在同步...', true);
+    updateStatus('同步中...', true);
     try {
         const res = await fetch(`https://api.github.com/gists/${config.gistId}`, { headers: { 'Authorization': `token ${config.token}` } });
         const data = await res.json();
@@ -213,6 +266,7 @@ async function fetchData() {
         render(); updateStatus('同步成功');
     } catch (e) { updateStatus('获取失败'); }
 }
+
 async function pushData() {
     if (!config.token) return;
     updateStatus('正在保存...', true);
@@ -225,7 +279,15 @@ async function pushData() {
         const data = await res.json();
         if (!config.gistId) { config.gistId = data.id; localStorage.setItem('gist_config', JSON.stringify(config)); document.getElementById('gist-id').value = data.id; }
         updateStatus('云端已更新');
-    } catch (e) { updateStatus('上传失败'); }
+    } catch (e) { updateStatus('保存失败'); }
 }
-function updateStatus(msg, show = false) { elements.statusBar.classList.remove('hidden'); elements.statusBar.innerText = msg; if (!show) setTimeout(() => elements.statusBar.classList.add('hidden'), 2500); }
-function resetConfig() { if(confirm('重置注销？')) { localStorage.clear(); location.reload(); } }
+
+function updateStatus(msg, show = false) { els.status.classList.remove('hidden'); els.status.innerText = msg; if (!show) setTimeout(() => els.status.classList.add('hidden'), 2500); }
+function resetConfig() { 
+    showDialog({
+        title: "注销确认",
+        body: "确定要注销并清除本地同步配置吗？",
+        confirmText: "确定注销",
+        onConfirm: () => { localStorage.clear(); location.reload(); }
+    });
+}

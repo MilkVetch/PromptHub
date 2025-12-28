@@ -1,14 +1,24 @@
 :root { --ph-orange: #ff9900; --ph-black: #000000; --ph-dark: #1b1b1b; }
 
-.title-card { cursor: grab; user-select: none; transition: transform 0.2s, border 0.2s; touch-action: none; position: relative; }
+/* 基础卡片：禁用文字选择，防止移动端拖拽干扰 */
+.title-card { 
+    cursor: grab; 
+    user-select: none; 
+    -webkit-user-select: none;
+    transition: transform 0.2s, border 0.2s; 
+    touch-action: none; 
+    position: relative; 
+}
+.title-card:active { cursor: grabbing; }
 .title-card.dragging { opacity: 0.1; transform: scale(0.95); }
 
-/* 四方向插入指示器 */
+/* 插入位置指示器 */
 .drop-target-above { border-top: 4px solid var(--ph-orange) !important; }
 .drop-target-below { border-bottom: 4px solid var(--ph-orange) !important; }
 .drop-target-left { border-left: 4px solid var(--ph-orange) !important; }
 .drop-target-right { border-right: 4px solid var(--ph-orange) !important; }
 
+/* 分类标题 */
 .category-header {
     display: flex;
     align-items: center;
@@ -18,6 +28,7 @@
     border-bottom: 1px solid #222;
     padding-bottom: 10px;
 }
+
 .btn-edit-cat {
     font-size: 11px;
     color: #555;
@@ -29,17 +40,20 @@
 }
 .btn-edit-cat:hover { color: var(--ph-orange); border-color: var(--ph-orange); }
 
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: var(--ph-black); }
+/* 自定义滚动条 */
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
-/* 版权及动画 */
+/* 动画 */
 @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 .heart-beat { display: inline-block; animation: heartbeat 1.5s ease-in-out infinite; color: #ff9900; }
 
-.markdown-body { font-size: 0.95rem; line-height: 1.7; color: #ccc; }
+@keyframes fadeInScale { 
+    from { opacity: 0; transform: scale(0.95); } 
+    to { opacity: 1; transform: scale(1); } 
+}
+.animate-modal { animation: fadeInScale 0.2s ease-out forwards; }
+
 .markdown-body pre { background: #080808; padding: 16px; border-radius: 12px; border: 1px solid #222; overflow-x: auto; }
 .markdown-body code { color: var(--ph-orange); background: #222; padding: 2px 5px; border-radius: 4px; }
-
-@keyframes scaleIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-.animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
