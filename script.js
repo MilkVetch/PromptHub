@@ -3,6 +3,7 @@ let config = JSON.parse(localStorage.getItem('gist_config')) || { token: '', gis
 let currentModalIndex = -1;
 let draggedItemIndex = null;
 let touchTimer = null;
+let touchStartX = 0, touchStartY = 0;
 
 const els = {
     list: document.getElementById('list-container'),
@@ -20,7 +21,7 @@ window.onload = () => {
     else els.config.classList.remove('hidden');
 };
 
-// 交互逻辑：点击空白关闭面板/对话框
+// --- 基础交互 ---
 document.addEventListener('click', (e) => {
     if (!els.config.contains(e.target) && !document.getElementById('config-toggle-btn').contains(e.target)) {
         els.config.classList.add('hidden');
@@ -29,84 +30,125 @@ document.addEventListener('click', (e) => {
 
 function toggleConfig(e) { e.stopPropagation(); els.config.classList.toggle('hidden'); }
 
-// 通用对话框管理 (替代丑陋的系统弹窗)
 function showDialog({ title, body, showInput, confirmText, onConfirm }) {
     document.getElementById('dialog-header').innerText = title;
     document.getElementById('dialog-body').innerHTML = body;
     const inputWrapper = document.getElementById('dialog-input-wrapper');
     const inputField = document.getElementById('dialog-input');
-    
-    if (showInput) {
-        inputWrapper.classList.remove('hidden');
-        inputField.value = showInput.val || '';
-    } else {
-        inputWrapper.classList.add('hidden');
-    }
-
+    if (showInput) { inputWrapper.classList.remove('hidden'); inputField.value = showInput.val || ''; }
+    else { inputWrapper.classList.add('hidden'); }
     const confirmBtn = document.getElementById('dialog-confirm-btn');
-    confirmBtn.innerText = confirmText || '确定';
-    confirmBtn.onclick = () => {
-        const val = showInput ? inputField.value : null;
-        onConfirm(val);
-        closeDialog();
-    };
+    confirmBtn.onclick = () => { onConfirm(showInput ? inputField.value : null); closeDialog(); };
     els.dialog.classList.remove('hidden');
 }
-
 function closeDialog() { els.dialog.classList.add('hidden'); }
 
-// 业务 UI 逻辑
-function showContactUI() {
-    showDialog({
-        title: "关于 & 联系",
-        body: "联系邮箱: <span class='text-white'>Khee.huang@hotmail.com</span><br><br>提示: 如果喜欢这个工具，可以联系我进行打赏以支持后续开发。感谢支持！",
-        confirmText: "好的",
-        onConfirm: () => {}
-    });
-}
+// --- 核心移动端拖拽逻辑 ---
+function bindTouchEvents(el, index) {
+    el.ontouchstart = (e) => {
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
 
-function confirmDeleteUI() {
-    showDialog({
-        title: "确认删除",
-        body: "确定要永久移除这个 Prompt 吗？此操作无法撤销。",
-        confirmText: "确认删除",
-        onConfirm: () => {
-            prompts.splice(currentModalIndex, 1);
-            render(); closeModal(); pushData();
+        touchTimer = setTimeout(() => {
+            draggedItemIndex = index;
+            el.classList.add('mobile-dragging');
+            if (navigator.vibrate) navigator.vibrate(50);
+        }, 600); // 0.6秒长按触发
+    };
+
+    el.ontouchmove = (e) => {
+        if (draggedItemIndex === null) return;
+        e.preventDefault(); // 阻止滚动
+
+        const touch = e.touches[0];
+        const dx = touch.clientX - touchStartX;
+        const dy = touch.clientY - touchStartY;
+        
+        el.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
+
+        // 获取当前手指下的目标
+        const target = getTouchTarget(touch.clientX, touch.clientY, el);
+        clearDropIndicators();
+        if (target) {
+            const rect = target.getBoundingClientRect();
+            target.classList.add(touch.clientY < rect.top + rect.height / 2 ? 'drop-target-above' : 'drop-target-below');
         }
-    });
-}
+    };
 
-function renameCategory(oldName) {
-    showDialog({
-        title: "重命名分类",
-        body: `正在修改分类: <span class='text-white'>${oldName}</span>`,
-        showInput: { val: oldName },
-        confirmText: "保存修改",
-        onConfirm: (newName) => {
-            if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
-                prompts.forEach(p => { if ((p.category || "未分类") === oldName) p.category = newName.trim(); });
-                render(); pushData();
-            }
+    el.ontouchend = (e) => {
+        clearTimeout(touchTimer);
+        if (draggedItemIndex === null) return;
+
+        const touch = e.changedTouches[0];
+        const target = getTouchTarget(touch.clientX, touch.clientY, el);
+
+        if (target) {
+            const rect = target.getBoundingClientRect();
+            const isBefore = touch.clientY < rect.top + rect.height / 2;
+            const targetTitle = target.querySelector('h3').innerText;
+            const toIdx = prompts.findIndex(p => p.title === targetTitle);
+            handleMove(draggedItemIndex, toIdx, isBefore);
+        } else {
+            render(); // 重置位置
         }
-    });
+
+        draggedItemIndex = null;
+        el.classList.remove('mobile-dragging');
+        el.style.transform = "";
+        clearDropIndicators();
+    };
 }
 
-// 核心功能：打开新建弹窗 (修复残留 BUG)
-function openCreateModal() {
-    currentModalIndex = -1;
-    // 强制清除所有输入值
-    document.getElementById('p-title').value = "";
-    document.getElementById('p-content').value = "";
-    document.getElementById('p-category').value = "";
-    
-    document.getElementById('modal-title').innerText = "新建 PROMPT";
-    document.getElementById('modal-category-badge').innerText = "NEW";
-    
-    showModalMode('edit');
-    showModal(true);
+function getTouchTarget(x, y, currentEl) {
+    currentEl.style.pointerEvents = 'none'; // 暂时穿透自身以获取下方元素
+    const elementUnder = document.elementFromPoint(x, y);
+    currentEl.style.pointerEvents = 'auto';
+    return elementUnder ? elementUnder.closest('.title-card') : null;
 }
 
+// --- 桌面端拖拽逻辑 ---
+function bindDragEvents(el, index) {
+    el.ondragstart = (e) => { draggedItemIndex = index; setTimeout(() => el.classList.add('dragging'), 0); };
+    el.ondragend = () => { el.classList.remove('dragging'); clearDropIndicators(); };
+    el.ondragover = (e) => {
+        e.preventDefault();
+        const rect = el.getBoundingClientRect();
+        clearDropIndicators();
+        if (window.innerWidth > 640) el.classList.add(e.clientX < rect.left + rect.width / 2 ? 'drop-target-left' : 'drop-target-right');
+        else el.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drop-target-above' : 'drop-target-below');
+    };
+    el.ondrop = (e) => {
+        e.preventDefault();
+        const rect = el.getBoundingClientRect();
+        const isBefore = (window.innerWidth > 640) ? (e.clientX < rect.left + rect.width / 2) : (e.clientY < rect.top + rect.height / 2);
+        handleMove(draggedItemIndex, index, isBefore);
+    };
+}
+
+function clearDropIndicators() { 
+    document.querySelectorAll('.title-card').forEach(c => c.classList.remove('drop-target-above', 'drop-target-below', 'drop-target-left', 'drop-target-right')); 
+}
+
+async function handleMove(fromIdx, toIdx, isBefore) {
+    if (fromIdx === toIdx || fromIdx === -1) return;
+    const source = prompts[fromIdx];
+    const target = prompts[toIdx];
+    
+    // 同步分类
+    if ((source.category || "未分类") !== (target.category || "未分类")) {
+        source.category = target.category || "未分类";
+    }
+
+    prompts.splice(fromIdx, 1);
+    const newTargetIdx = prompts.indexOf(target);
+    prompts.splice(isBefore ? newTargetIdx : newTargetIdx + 1, 0, source);
+    
+    render(); 
+    await pushData();
+}
+
+// --- UI 渲染与业务逻辑 ---
 function render(filter = "") {
     els.list.innerHTML = '';
     const filtered = prompts.filter(p => 
@@ -137,7 +179,7 @@ function render(filter = "") {
         catItems.forEach(p => {
             const realIdx = prompts.indexOf(p);
             const card = document.createElement('div');
-            card.className = 'title-card bg-[#111] p-7 rounded-[1.5rem] border border-zinc-900 hover:border-[#ff9900]/40 shadow-lg flex flex-col justify-between group';
+            card.className = 'title-card bg-[#111] p-7 rounded-[1.5rem] border border-zinc-900 shadow-lg flex flex-col justify-between group';
             
             if (filter === "") {
                 card.draggable = true;
@@ -163,43 +205,16 @@ function render(filter = "") {
     document.getElementById('empty-state').classList.toggle('hidden', hasVisible);
 }
 
-// 拖拽逻辑保持 (添加了 2D 插入)
-function bindDragEvents(el, index) {
-    el.ondragstart = (e) => { draggedItemIndex = index; setTimeout(() => el.classList.add('dragging'), 0); };
-    el.ondragend = () => { el.classList.remove('dragging'); clearDropIndicators(); };
-    el.ondragover = (e) => {
-        e.preventDefault();
-        const rect = el.getBoundingClientRect();
-        clearDropIndicators();
-        if (window.innerWidth > 640) el.classList.add(e.clientX < rect.left + rect.width / 2 ? 'drop-target-left' : 'drop-target-right');
-        else el.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drop-target-above' : 'drop-target-below');
-    };
-    el.ondrop = (e) => {
-        e.preventDefault();
-        const rect = el.getBoundingClientRect();
-        const isBefore = (window.innerWidth > 640) ? (e.clientX < rect.left + rect.width / 2) : (e.clientY < rect.top + rect.height / 2);
-        handleMove(draggedItemIndex, index, isBefore);
-    };
-}
-
-function bindTouchEvents(el, index) {
-    el.ontouchstart = () => { touchTimer = setTimeout(() => { draggedItemIndex = index; el.classList.add('dragging'); if (navigator.vibrate) navigator.vibrate(50); }, 600); };
-    el.ontouchend = () => clearTimeout(touchTimer);
-}
-
-function clearDropIndicators() { document.querySelectorAll('.title-card').forEach(c => c.classList.remove('drop-target-above', 'drop-target-below', 'drop-target-left', 'drop-target-right')); }
-
-async function handleMove(fromIdx, toIdx, isBefore) {
-    if (fromIdx === toIdx) return;
-    const source = prompts[fromIdx];
-    const target = prompts[toIdx];
-    if ((source.category || "未分类") !== (target.category || "未分类")) {
-        source.category = target.category || "未分类";
-    }
-    prompts.splice(fromIdx, 1);
-    const newTargetIdx = prompts.indexOf(target);
-    prompts.splice(isBefore ? newTargetIdx : newTargetIdx + 1, 0, source);
-    render(); await pushData();
+// 弹窗管理
+function openCreateModal() {
+    currentModalIndex = -1;
+    document.getElementById('p-title').value = "";
+    document.getElementById('p-content').value = "";
+    document.getElementById('p-category').value = "";
+    document.getElementById('modal-title').innerText = "新建 PROMPT";
+    document.getElementById('modal-category-badge').innerText = "NEW";
+    showModalMode('edit');
+    showModal(true);
 }
 
 function openViewModal(index) {
@@ -241,9 +256,15 @@ async function handleSave() {
     render(); closeModal(); await pushData();
 }
 
-function copyFromModal(btn) { navigator.clipboard.writeText(prompts[currentModalIndex].content); const old = btn.innerText; btn.innerText = "已复制 ✅"; setTimeout(() => btn.innerText = old, 1500); }
+function copyFromModal(btn) { 
+    navigator.clipboard.writeText(prompts[currentModalIndex].content); 
+    const old = btn.innerText; btn.innerText = "已复制 ✅"; 
+    setTimeout(() => btn.innerText = old, 1500); 
+}
+
 function handleSearch() { render(els.search.value.toLowerCase()); }
 
+// --- 数据同步 ---
 async function saveConfig() {
     config = { token: document.getElementById('gh-token').value.trim(), gistId: document.getElementById('gist-id').value.trim() };
     localStorage.setItem('gist_config', JSON.stringify(config));
@@ -283,11 +304,48 @@ async function pushData() {
 }
 
 function updateStatus(msg, show = false) { els.status.classList.remove('hidden'); els.status.innerText = msg; if (!show) setTimeout(() => els.status.classList.add('hidden'), 2500); }
+
 function resetConfig() { 
     showDialog({
         title: "注销确认",
         body: "确定要注销并清除本地同步配置吗？",
         confirmText: "确定注销",
         onConfirm: () => { localStorage.clear(); location.reload(); }
+    });
+}
+
+function renameCategory(oldName) {
+    showDialog({
+        title: "重命名分类",
+        body: `正在修改分类: <span class='text-white'>${oldName}</span>`,
+        showInput: { val: oldName },
+        confirmText: "保存修改",
+        onConfirm: (newName) => {
+            if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
+                prompts.forEach(p => { if ((p.category || "未分类") === oldName) p.category = newName.trim(); });
+                render(); pushData();
+            }
+        }
+    });
+}
+
+function showContactUI() {
+    showDialog({
+        title: "关于 & 联系",
+        body: "联系邮箱: <span class='text-white'>Khee.huang@hotmail.com</span><br><br>提示: 如果喜欢这个工具，可以联系我进行打赏以支持后续开发。感谢支持！",
+        confirmText: "好的",
+        onConfirm: () => {}
+    });
+}
+
+function confirmDeleteUI() {
+    showDialog({
+        title: "确认删除",
+        body: "确定要永久移除这个 Prompt 吗？此操作无法撤销。",
+        confirmText: "确认删除",
+        onConfirm: () => {
+            prompts.splice(currentModalIndex, 1);
+            render(); closeModal(); pushData();
+        }
     });
 }
