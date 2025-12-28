@@ -1,36 +1,33 @@
 :root { --ph-orange: #ff9900; --ph-black: #000000; --ph-dark: #1b1b1b; }
 
-/* 基础卡片 */
 .title-card { 
     cursor: grab; 
     user-select: none; 
     -webkit-user-select: none;
-    transition: transform 0.2s, border 0.2s, box-shadow 0.2s; 
-    touch-action: none; /* 关键：防止拖拽时触发页面滚动 */
+    transition: transform 0.2s, border 0.2s; 
+    /* 允许垂直滚动页面，但禁用水平滚动和双指缩放，以便 JS 处理拖拽 */
+    touch-action: pan-y; 
     position: relative; 
 }
-.title-card:active { cursor: grabbing; }
 
-/* 桌面端拖拽样式 */
 .title-card.dragging { opacity: 0.1; transform: scale(0.9); }
 
-/* 移动端拖拽特效 */
+/* 移动端专属拖拽样式 */
 .title-card.mobile-dragging {
     opacity: 0.9 !important;
     transform: scale(1.05) !important;
     box-shadow: 0 30px 60px rgba(0,0,0,0.8);
     border-color: var(--ph-orange) !important;
     z-index: 1000 !important;
-    transition: none !important; /* 随手指移动时不需要过渡，否则会有延迟 */
+    transition: none !important;
+    pointer-events: none; /* 拖拽时穿透自身，以便 getTouchTarget 获取下方元素 */
 }
 
-/* 插入位置指示器 */
 .drop-target-above { border-top: 4px solid var(--ph-orange) !important; }
 .drop-target-below { border-bottom: 4px solid var(--ph-orange) !important; }
 .drop-target-left { border-left: 4px solid var(--ph-orange) !important; }
 .drop-target-right { border-right: 4px solid var(--ph-orange) !important; }
 
-/* 其他样式保持原样 */
 .category-header { display: flex; align-items: center; gap: 12px; margin-top: 40px; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px; }
 .btn-edit-cat { font-size: 11px; color: #555; background: #111; padding: 2px 10px; border-radius: 20px; border: 1px solid #333; transition: all 0.2s; }
 .btn-edit-cat:hover { color: var(--ph-orange); border-color: var(--ph-orange); }
