@@ -21,32 +21,24 @@ window.onload = () => {
     else els.config.classList.remove('hidden');
 };
 
-// --- 精准移动端 Handle 拖拽逻辑 ---
+// --- 移动端 & 桌面端拖拽逻辑 (锁定 Handle) ---
 function bindTouchEvents(card, index) {
     const handle = card.querySelector('.drag-handle');
-    
     handle.ontouchstart = (e) => {
         const touch = e.touches[0];
-        touchStartX = touch.clientX;
-        touchStartY = touch.clientY;
-        clearTimeout(touchTimer);
-        draggedItemIndex = null;
-
+        touchStartX = touch.clientX; touchStartY = touch.clientY;
+        clearTimeout(touchTimer); draggedItemIndex = null;
         touchTimer = setTimeout(() => {
-            draggedItemIndex = index;
-            card.classList.add('mobile-dragging');
+            draggedItemIndex = index; card.classList.add('mobile-dragging');
             if (navigator.vibrate) navigator.vibrate(50);
         }, 400); 
     };
-
     handle.ontouchmove = (e) => {
         if (draggedItemIndex === null) return;
-        e.preventDefault(); 
+        e.preventDefault();
         const touch = e.touches[0];
-        const dx = touch.clientX - touchStartX;
-        const dy = touch.clientY - touchStartY;
+        const dx = touch.clientX - touchStartX; const dy = touch.clientY - touchStartY;
         card.style.transform = `translate(${dx}px, ${dy}px) scale(1.05)`;
-
         const target = getTouchTarget(touch.clientX, touch.clientY);
         clearDropIndicators();
         if (target && target !== card) {
@@ -54,7 +46,6 @@ function bindTouchEvents(card, index) {
             target.classList.add(touch.clientY < rect.top + rect.height / 2 ? 'drop-target-above' : 'drop-target-below');
         }
     };
-
     handle.ontouchend = (e) => {
         clearTimeout(touchTimer);
         if (draggedItemIndex !== null) {
@@ -67,10 +58,7 @@ function bindTouchEvents(card, index) {
                 handleMove(draggedItemIndex, toIdx, isBefore);
             } else { render(); }
         }
-        draggedItemIndex = null;
-        card.classList.remove('mobile-dragging');
-        card.style.transform = "";
-        clearDropIndicators();
+        draggedItemIndex = null; card.classList.remove('mobile-dragging'); card.style.transform = ""; clearDropIndicators();
     };
 }
 
@@ -79,7 +67,6 @@ function getTouchTarget(x, y) {
     return elementUnder ? elementUnder.closest('.title-card') : null;
 }
 
-// --- 桌面端 Drag 逻辑 ---
 function bindDragEvents(card, index) {
     const handle = card.querySelector('.drag-handle');
     handle.draggable = true;
@@ -100,7 +87,17 @@ function bindDragEvents(card, index) {
     };
 }
 
-// --- UI 渲染 ---
+// --- 数据移动与渲染 ---
+async function handleMove(f, t, b) {
+    if (f === t || f === -1) return;
+    const s = prompts[f]; const tar = prompts[t];
+    if ((s.category || "未分类") !== (tar.category || "未分类")) s.category = tar.category || "未分类";
+    prompts.splice(f, 1);
+    const nt = prompts.indexOf(tar);
+    prompts.splice(b ? nt : nt + 1, 0, s);
+    render(); await pushData();
+}
+
 function render(filter = "") {
     els.list.innerHTML = '';
     const filtered = prompts.filter(p => p.title.toLowerCase().includes(filter) || p.content.toLowerCase().includes(filter));
@@ -119,7 +116,7 @@ function render(filter = "") {
             const realIdx = prompts.indexOf(p);
             const card = document.createElement('div');
             card.className = 'title-card bg-[#111] p-7 rounded-[1.5rem] border border-zinc-900 shadow-lg flex flex-col justify-between group';
-            card.innerHTML = `<div class="cursor-pointer overflow-hidden mb-4" onclick="openViewModal(${realIdx})"><h3 class="font-black text-zinc-100 group-hover:text-[#ff9900] text-lg leading-tight truncate transition-colors">${p.title}</h3></div><div class="flex justify-between items-center mt-auto"><span class="text-[9px] font-black text-zinc-700 uppercase tracking-widest">点击查看标题</span><div class="drag-handle text-zinc-800 group-hover:text-[#ff9900]"><svg width="20" height="20" fill="currentColor" style="pointer-events: none;"><circle cx="6" cy="6" r="1.5"/><circle cx="14" cy="6" r="1.5"/><circle cx="6" cy="14" r="1.5"/><circle cx="14" cy="14" r="1.5"/></svg></div></div>`;
+            card.innerHTML = `<div class="cursor-pointer overflow-hidden mb-4" onclick="openViewModal(${realIdx})"><h3 class="font-black text-zinc-100 group-hover:text-[#ff9900] text-lg leading-tight truncate transition-colors">${p.title}</h3></div><div class="flex justify-between items-center mt-auto"><span class="text-[9px] font-black text-zinc-700 uppercase tracking-widest">点击标题查看</span><div class="drag-handle text-zinc-800 group-hover:text-[#ff9900]"><svg width="20" height="20" fill="currentColor" style="pointer-events: none;"><circle cx="6" cy="6" r="1.5"/><circle cx="14" cy="6" r="1.5"/><circle cx="6" cy="14" r="1.5"/><circle cx="14" cy="14" r="1.5"/></svg></div></div>`;
             if (filter === "") { bindDragEvents(card, realIdx); bindTouchEvents(card, realIdx); }
             grid.appendChild(card);
         });
@@ -128,9 +125,45 @@ function render(filter = "") {
     document.getElementById('empty-state').classList.toggle('hidden', hasVisible);
 }
 
-// --- 其余业务逻辑（已包含 whitespace-pre-wrap 修复） ---
-async function handleMove(f, t, b) { if (f === t || f === -1) return; const s = prompts[f]; const tar = prompts[t]; if ((s.category || "未分类") !== (tar.category || "未分类")) s.category = tar.category || "未分类"; prompts.splice(f, 1); const nt = prompts.indexOf(tar); prompts.splice(b ? nt : nt + 1, 0, s); render(); await pushData(); }
-function clearDropIndicators() { document.querySelectorAll('.title-card').forEach(c => c.classList.remove('drop-target-above', 'drop-target-below', 'drop-target-left', 'drop-target-right')); }
+// --- 备份与恢复功能 (核心更新) ---
+async function exportConfig() {
+    const backupData = { config, prompts, exportAt: new Date().toLocaleString() };
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = `prompthub_full_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(url);
+}
+
+function triggerImport() { document.getElementById('import-input').click(); }
+
+async function handleImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+            if (!data.config || !data.prompts) throw new Error("无效的备份文件");
+            showDialog({
+                title: "确认导入",
+                body: "导入将覆盖当前所有的本地配置与 Prompt 数据，并同步至云端。确定继续吗？",
+                confirmText: "确定导入",
+                onConfirm: async () => {
+                    config = data.config; prompts = data.prompts;
+                    localStorage.setItem('gist_config', JSON.stringify(config));
+                    document.getElementById('gh-token').value = config.token || '';
+                    document.getElementById('gist-id').value = config.gistId || '';
+                    render(); updateStatus('导入成功，同步云端中...');
+                    await pushData();
+                }
+            });
+        } catch (err) { updateStatus('导入失败: 文件格式错误'); }
+    };
+    reader.readAsText(file); e.target.value = '';
+}
+
+// --- 基础业务逻辑 ---
 async function saveConfig() { config = { token: document.getElementById('gh-token').value.trim(), gistId: document.getElementById('gist-id').value.trim() }; localStorage.setItem('gist_config', JSON.stringify(config)); await fetchData(); els.config.classList.add('hidden'); }
 async function fetchData() { if (!config.token || !config.gistId) return; updateStatus('同步中...', true); try { const res = await fetch(`https://api.github.com/gists/${config.gistId}`, { headers: { 'Authorization': `token ${config.token}` } }); const data = await res.json(); prompts = JSON.parse(data.files['prompts.json'].content); render(); updateStatus('同步成功'); } catch (e) { updateStatus('获取失败'); } }
 async function pushData() { if (!config.token) return; updateStatus('正在保存...', true); try { const res = await fetch(config.gistId ? `https://api.github.com/gists/${config.gistId}` : `https://api.github.com/gists`, { method: config.gistId ? 'PATCH' : 'POST', headers: { 'Authorization': `token ${config.token}` }, body: JSON.stringify({ files: { "prompts.json": { content: JSON.stringify(prompts, null, 2) } } }) }); const data = await res.json(); if (!config.gistId) { config.gistId = data.id; localStorage.setItem('gist_config', JSON.stringify(config)); document.getElementById('gist-id').value = data.id; } updateStatus('云端已更新'); } catch (e) { updateStatus('保存失败'); } }
@@ -149,5 +182,6 @@ function showContactUI() { showDialog({ title: "关于 & 联系", body: "联系�
 function confirmDeleteUI() { showDialog({ title: "确认删除", body: "确定要永久移除这个 Prompt 吗？此操作无法撤销。", confirmText: "确认删除", onConfirm: () => { prompts.splice(currentModalIndex, 1); render(); closeModal(); pushData(); } }); }
 function resetConfig() { showDialog({ title: "注销确认", body: "确定要注销并清除本地同步配置吗？", confirmText: "确定注销", onConfirm: () => { localStorage.clear(); location.reload(); } }); }
 function renameCategory(o) { showDialog({ title: "重命名分类", body: `正在修改分类: <span class='text-white'>${o}</span>`, showInput: { val: o }, confirmText: "保存修改", onConfirm: (n) => { if (n && n.trim() !== "" && n.trim() !== o) { prompts.forEach(p => { if ((p.category || "未分类") === o) p.category = n.trim(); }); render(); pushData(); } } }); }
+function clearDropIndicators() { document.querySelectorAll('.title-card').forEach(c => c.classList.remove('drop-target-above', 'drop-target-below', 'drop-target-left', 'drop-target-right')); }
 function showDialog({ title, body, showInput, confirmText, onConfirm }) { document.getElementById('dialog-header').innerText = title; document.getElementById('dialog-body').innerHTML = body; const iW = document.getElementById('dialog-input-wrapper'); const iF = document.getElementById('dialog-input'); if (showInput) { iW.classList.remove('hidden'); iF.value = showInput.val || ''; } else { iW.classList.add('hidden'); } document.getElementById('dialog-confirm-btn').onclick = () => { onConfirm(showInput ? iF.value : null); closeDialog(); }; document.getElementById('dialog-backdrop').classList.remove('hidden'); }
 function closeDialog() { document.getElementById('dialog-backdrop').classList.add('hidden'); }

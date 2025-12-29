@@ -39,7 +39,9 @@
             </div>
             <div class="flex flex-wrap gap-4 mt-8">
                 <button onclick="saveConfig()" class="flex-grow bg-[#ff9900] text-black py-4 rounded-2xl font-black hover:scale-[1.01] transition-transform">保存配置</button>
-                <button onclick="exportConfig()" class="px-8 py-4 bg-zinc-800 text-zinc-300 rounded-2xl font-bold border border-zinc-800">导出配置</button>
+                <button onclick="exportConfig()" class="px-8 py-4 bg-zinc-800 text-zinc-300 rounded-2xl font-bold border border-zinc-800">导出备份</button>
+                <button onclick="triggerImport()" class="px-8 py-4 bg-zinc-800 text-zinc-300 rounded-2xl font-bold border border-zinc-800">导入备份</button>
+                <input type="file" id="import-input" class="hidden" accept=".json" onchange="handleImport(event)">
                 <button onclick="resetConfig()" class="px-8 py-4 bg-zinc-950 text-red-900 rounded-2xl font-bold border border-red-950/20">注销</button>
             </div>
         </section>
